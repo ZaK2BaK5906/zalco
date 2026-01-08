@@ -116,40 +116,7 @@ CreateThread(function()
     end
 end)
 
--- Points de farming
-CreateThread(function()
-    for i, point in pairs(Config.FarmingPoints) do
-        if Config.UseTarget then
-            -- Utiliser ox_target
-            exports.ox_target:addSphereZone({
-                coords = point.coords,
-                radius = 1.5,
-                options = {
-                    {
-                        name = 'farm_' .. i,
-                        icon = 'fa-solid fa-seedling',
-                        label = point.label,
-                        onSelect = function()
-                            FarmItem(i, point)
-                        end,
-                        distance = Config.InteractDistance
-                    }
-                }
-            })
-        else
-            -- Utiliser les markers classiques
-            local blip = AddBlipForCoord(point.coords.x, point.coords.y, point.coords.z)
-            SetBlipSprite(blip, 1)
-            SetBlipDisplay(blip, 4)
-            SetBlipScale(blip, 0.6)
-            SetBlipColour(blip, 2)
-            SetBlipAsShortRange(blip, true)
-            BeginTextCommandSetBlipName('STRING')
-            AddTextComponentSubstringPlayerName(point.label)
-            EndTextCommandSetBlipName(blip)
-        end
-    end
-end)
+-- Note: Le farming utilise TOUJOURS E (pas ox_target), géré dans le thread principal ci-dessous
 
 -- Laboratoires
 CreateThread(function()
@@ -174,31 +141,48 @@ CreateThread(function()
     end
 end)
 
--- Markers pour les points sans target
-if not Config.UseTarget then
-    CreateThread(function()
-        while true do
-            local sleep = 1000
-            local playerPed = PlayerPedId()
-            local playerCoords = GetEntityCoords(playerPed)
+-- Fonction pour afficher le texte stylé
+local function ShowStyledText(text, key)
+    SendNUIMessage({
+        action = 'showHelpText',
+        text = text,
+        key = key or 'E'
+    })
+end
 
-            -- Farming points
-            for i, point in pairs(Config.FarmingPoints) do
-                local distance = #(playerCoords - point.coords)
-                if distance < Config.DrawDistance then
-                    sleep = 0
-                    DrawMarker(2, point.coords.x, point.coords.y, point.coords.z + 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.3, 0.3, 46, 204, 113, 200, true, true, 2, false, nil, nil, false)
+local function HideStyledText()
+    SendNUIMessage({
+        action = 'hideHelpText'
+    })
+end
 
-                    if distance < Config.InteractDistance then
-                        ESX.ShowHelpNotification('Appuyez sur ~INPUT_CONTEXT~ pour ' .. point.label)
-                        if IsControlJustReleased(0, 38) then
-                            FarmItem(i, point)
-                        end
+-- Thread pour les markers de farming (TOUJOURS avec E, pas ox_target)
+CreateThread(function()
+    while true do
+        local sleep = 1000
+        local playerPed = PlayerPedId()
+        local playerCoords = GetEntityCoords(playerPed)
+
+        -- Farming points
+        for i, point in pairs(Config.FarmingPoints) do
+            local distance = #(playerCoords - point.coords)
+            if distance < Config.DrawDistance then
+                sleep = 0
+                DrawMarker(2, point.coords.x, point.coords.y, point.coords.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.3, 0.3, 102, 126, 234, 200, true, true, 2, false, nil, nil, false)
+
+                if distance < Config.InteractDistance then
+                    ShowStyledText(point.label, 'E')
+                    if IsControlJustReleased(0, 38) and not isBusy then
+                        FarmItem(i, point)
                     end
+                elseif distance < Config.DrawDistance then
+                    HideStyledText()
                 end
             end
+        end
 
-            -- Labs
+        -- Labs (utiliser ox_target SI activé, sinon markers)
+        if not Config.UseTarget then
             for i, lab in pairs(Config.Labs) do
                 local distance = #(playerCoords - lab.coords)
                 if distance < Config.DrawDistance then
@@ -206,18 +190,22 @@ if not Config.UseTarget then
                     DrawMarker(27, lab.coords.x, lab.coords.y, lab.coords.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 1.0, 220, 20, 60, 200, false, true, 2, false, nil, nil, false)
 
                     if distance < Config.InteractDistance then
-                        ESX.ShowHelpNotification('Appuyez sur ~INPUT_CONTEXT~ pour ouvrir le laboratoire')
-                        if IsControlJustReleased(0, 38) then
+                        ShowStyledText('Ouvrir le laboratoire', 'E')
+                        if IsControlJustReleased(0, 38) and not isBusy then
                             OpenLabMenu(i)
                         end
                     end
                 end
             end
-
-            Wait(sleep)
         end
-    end)
-end
+
+        if sleep == 1000 then
+            HideStyledText()
+        end
+
+        Wait(sleep)
+    end
+end)
 
 -- Fonction de farming
 function FarmItem(index, point)
@@ -227,7 +215,19 @@ function FarmItem(index, point)
     end
 
     isBusy = true
+    HideStyledText()
     local playerPed = PlayerPedId()
+
+    -- S'assurer que le joueur est au sol
+    local playerCoords = GetEntityCoords(playerPed)
+    local groundZ = playerCoords.z
+    local foundGround, groundZ = GetGroundZFor_3dCoord(playerCoords.x, playerCoords.y, playerCoords.z, groundZ, false)
+
+    if foundGround then
+        SetEntityCoords(playerPed, playerCoords.x, playerCoords.y, groundZ, false, false, false, false)
+    end
+
+    Wait(100)
 
     -- Animation
     if point.animation then
@@ -235,7 +235,8 @@ function FarmItem(index, point)
         while not HasAnimDictLoaded(point.animation.dict) do
             Wait(100)
         end
-        TaskPlayAnim(playerPed, point.animation.dict, point.animation.anim, 8.0, -8.0, -1, point.animation.flag, 0, false, false, false)
+        -- Utiliser TaskPlayAnim avec flag 1 pour rester au sol
+        TaskPlayAnim(playerPed, point.animation.dict, point.animation.anim, 4.0, -4.0, -1, 1, 0, false, false, false)
     end
 
     -- Progress bar
@@ -248,6 +249,10 @@ function FarmItem(index, point)
             car = true,
             move = true,
             combat = true
+        },
+        anim = {
+            dict = point.animation.dict,
+            clip = point.animation.anim
         }
     }) then
         ClearPedTasks(playerPed)
@@ -442,6 +447,15 @@ end)
 -- Fermer l'UI
 RegisterNUICallback('closeUI', function(data, cb)
     SetNuiFocus(false, false)
+    SetNuiFocusKeepInput(false)
+    SendNUIMessage({action = 'closeAll'})
+    cb('ok')
+end)
+
+-- Fermer avec ESC
+RegisterNUICallback('escape', function(data, cb)
+    SetNuiFocus(false, false)
+    SetNuiFocusKeepInput(false)
     SendNUIMessage({action = 'closeAll'})
     cb('ok')
 end)

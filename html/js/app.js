@@ -31,8 +31,26 @@ window.addEventListener('message', (event) => {
         case 'closeAll':
             closeAll();
             break;
+        case 'showHelpText':
+            showHelpText(data.text, data.key);
+            break;
+        case 'hideHelpText':
+            hideHelpText();
+            break;
     }
 });
+
+// Afficher le texte d'aide
+function showHelpText(text, key) {
+    $('#helpKey').text(key || 'E');
+    $('#helpMessage').text(text);
+    $('#help-text').removeClass('hidden');
+}
+
+// Cacher le texte d'aide
+function hideHelpText() {
+    $('#help-text').addClass('hidden');
+}
 
 // Ouvrir le menu du laboratoire
 function openLab(alcoholTypes, levels) {
@@ -206,6 +224,9 @@ function closeAll() {
 // Gestion de la touche ESC
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+        e.preventDefault();
+        // Notifier le client LUA que ESC a été pressé
+        $.post(`https://${GetParentResourceName()}/escape`, JSON.stringify({}));
         closeUI();
     }
 });
