@@ -1,0 +1,23 @@
+# Logs
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Temp
+*.tmp
+*.temp
+
+# Backup
+*.backup
+*.bak
+
+# Config locale (si vous voulez pas partager votre config custom)
+# config/config.local.lua

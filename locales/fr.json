@@ -1,0 +1,101 @@
+{
+  "notifications": {
+    "farming": {
+      "success": "Vous avez récolté %s x %s",
+      "no_bottle": "Vous avez besoin d'une bouteille vide !",
+      "inventory_full": "Inventaire plein !",
+      "cancelled": "Récolte annulée"
+    },
+    "processing": {
+      "success": "Vous avez produit : %s (%s)",
+      "no_ingredients": "Vous n'avez pas tous les ingrédients nécessaires !",
+      "level_required": "Vous n'avez pas le niveau requis pour cette recette !",
+      "inventory_full": "Inventaire plein !",
+      "cancelled": "Distillation annulée"
+    },
+    "selling": {
+      "success": "Vente réussie ! Total : %s$",
+      "no_alcohol": "Vous n'avez aucun alcool à vendre !"
+    },
+    "level": {
+      "up": "Niveau supérieur ! Vous êtes maintenant niveau %s !"
+    },
+    "general": {
+      "busy": "Vous êtes déjà en train de faire quelque chose !"
+    }
+  },
+  "ui": {
+    "lab": {
+      "title": "Laboratoire Clandestin",
+      "locked": "Verrouillé",
+      "distillation": "Distillation en cours...",
+      "quality": {
+        "low": "Mauvaise",
+        "mid": "Moyenne",
+        "high": "Bonne"
+      }
+    },
+    "receipt": {
+      "title": "Reçu de Vente",
+      "total": "Total",
+      "each": "chacun",
+      "close": "Fermer"
+    },
+    "tablet": {
+      "title": "Statistiques",
+      "stats": {
+        "level": "Niveau",
+        "experience": "Expérience",
+        "farmed": "Items Farmés",
+        "processed": "Alcools Produits",
+        "sold": "Alcools Vendus",
+        "money": "Argent Gagné"
+      },
+      "sections": {
+        "farmed_items": "Items Farmés",
+        "levels": "Niveaux & Recettes",
+        "no_items": "Aucun item farmé pour le moment"
+      },
+      "level_status": {
+        "current": "Actuel",
+        "unlocked": "Débloqué",
+        "locked": "Requis: %s XP"
+      }
+    },
+    "help": {
+      "farm": "Appuyez sur ~INPUT_CONTEXT~ pour %s",
+      "lab": "Appuyez sur ~INPUT_CONTEXT~ pour ouvrir le laboratoire",
+      "sell": "Appuyez sur ~INPUT_CONTEXT~ pour vendre votre alcool"
+    }
+  },
+  "items": {
+    "levure": "Levure",
+    "eau_source": "Eau de source",
+    "sucre": "Sucre",
+    "raisin": "Raisin",
+    "pomme": "Pomme",
+    "mais": "Maïs",
+    "orge": "Orge"
+  },
+  "alcohol_names": {
+    "Vodka": "Vodka",
+    "Whisky": "Whisky",
+    "Rhum": "Rhum",
+    "Gin": "Gin",
+    "Tequila": "Tequila",
+    "Calvados": "Calvados",
+    "Moonshine": "Moonshine",
+    "Absinthe": "Absinthe",
+    "Cognac": "Cognac",
+    "Pastis": "Pastis"
+  },
+  "levels": {
+    "names": {
+      "0": "Débutant",
+      "1": "Apprenti",
+      "2": "Distillateur",
+      "3": "Maître",
+      "4": "Légende"
+    }
+  }
+}

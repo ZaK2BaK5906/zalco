@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zalco - Contrebande d'Alcool</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Menu du Laboratoire -->
+    <div id="lab-menu" class="container hidden">
+        <div class="modal lab-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-flask"></i> Laboratoire Clandestin</h2>
+                <button class="close-btn" onclick="closeUI()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="alcohol-list" id="alcoholList">
+                    <!-- Généré dynamiquement par JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu de Vente (Reçu) -->
+    <div id="receipt-menu" class="container hidden">
+        <div class="modal receipt-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-receipt"></i> Reçu de Vente</h2>
+                <button class="close-btn" onclick="closeUI()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="receipt-items" id="receiptItems">
+                    <!-- Généré dynamiquement -->
+                </div>
+                <div class="receipt-total">
+                    <span>Total :</span>
+                    <span id="receiptTotal" class="money">0 $</span>
+                </div>
+                <button class="btn btn-primary" onclick="closeUI()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tablette de Stats -->
+    <div id="tablet-menu" class="container hidden">
+        <div class="tablet">
+            <div class="tablet-header">
+                <div class="tablet-time" id="tabletTime"></div>
+                <h2><i class="fas fa-chart-line"></i> Statistiques</h2>
+                <button class="close-btn" onclick="closeUI()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="tablet-body">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-label">Niveau</div>
+                            <div class="stat-value" id="statLevel">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-star"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-label">Expérience</div>
+                            <div class="stat-value" id="statExp">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-seedling"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-label">Items Farmés</div>
+                            <div class="stat-value" id="statFarmed">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-flask"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-label">Alcools Produits</div>
+                            <div class="stat-value" id="statProcessed">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-hand-holding-usd"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-label">Alcools Vendus</div>
+                            <div class="stat-value" id="statSold">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-label">Argent Gagné</div>
+                            <div class="stat-value money" id="statMoney">0 $</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title"><i class="fas fa-box"></i> Items Farmés</div>
+                <div class="farmed-items" id="farmedItems">
+                    <!-- Généré dynamiquement -->
+                </div>
+
+                <div class="section-title"><i class="fas fa-book"></i> Niveaux & Recettes</div>
+                <div class="levels-list" id="levelsList">
+                    <!-- Généré dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
