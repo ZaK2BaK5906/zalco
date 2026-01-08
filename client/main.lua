@@ -141,20 +141,89 @@ CreateThread(function()
     end
 end)
 
--- Fonction pour afficher le texte stylé
+-- Variables pour le texte 3D
+local helpText = {
+    visible = false,
+    message = '',
+    key = 'E'
+}
+
+-- Fonction pour dessiner du texte 3D
+local function Draw3DText(coords, text)
+    local onScreen, _x, _y = World3dToScreen2d(coords.x, coords.y, coords.z)
+    if onScreen then
+        SetTextScale(0.4, 0.4)
+        SetTextFont(4)
+        SetTextProportional(1)
+        SetTextColour(255, 255, 255, 255)
+        SetTextOutline()
+        SetTextEntry("STRING")
+        SetTextCentre(1)
+        AddTextComponentString(text)
+        DrawText(_x, _y)
+    end
+end
+
+-- Fonction pour afficher le texte 3D stylé
 local function ShowStyledText(text, key)
-    SendNUIMessage({
-        action = 'showHelpText',
-        text = text,
-        key = key or 'E'
-    })
+    helpText.visible = true
+    helpText.message = text
+    helpText.key = key or 'E'
 end
 
 local function HideStyledText()
-    SendNUIMessage({
-        action = 'hideHelpText'
-    })
+    helpText.visible = false
 end
+
+-- Thread pour afficher le texte 3D à côté de la tête
+CreateThread(function()
+    while true do
+        Wait(0)
+        if helpText.visible then
+            local playerPed = PlayerPedId()
+            local playerCoords = GetEntityCoords(playerPed)
+            local boneCoords = GetPedBoneCoords(playerPed, 31086, 0.0, 0.0, 0.0) -- Head bone
+
+            -- Position à côté de la tête
+            local textCoords = vector3(boneCoords.x + 0.4, boneCoords.y, boneCoords.z + 0.3)
+
+            -- Dessiner le cadre avec gradient (simulé avec plusieurs rectangles)
+            local onScreen, screenX, screenY = World3dToScreen2d(textCoords.x, textCoords.y, textCoords.z)
+            if onScreen then
+                -- Fond du cadre
+                DrawRect(screenX, screenY, 0.15, 0.045, 102, 126, 234, 240)
+
+                -- Bordure
+                DrawRect(screenX, screenY - 0.0235, 0.15, 0.002, 255, 255, 255, 100) -- Top
+                DrawRect(screenX, screenY + 0.0235, 0.15, 0.002, 255, 255, 255, 100) -- Bottom
+
+                -- Texte de la touche
+                SetTextScale(0.35, 0.35)
+                SetTextFont(4)
+                SetTextProportional(1)
+                SetTextColour(255, 255, 255, 255)
+                SetTextOutline()
+                SetTextEntry("STRING")
+                SetTextCentre(1)
+                AddTextComponentString('[' .. helpText.key .. ']')
+                DrawText(screenX - 0.045, screenY - 0.012)
+
+                -- Texte du message
+                SetTextScale(0.3, 0.3)
+                SetTextFont(4)
+                SetTextProportional(1)
+                SetTextColour(255, 255, 255, 255)
+                SetTextOutline()
+                SetTextEntry("STRING")
+                SetTextCentre(1)
+                AddTextComponentString(helpText.message)
+                DrawText(screenX + 0.015, screenY - 0.012)
+            end
+        else
+            Wait(500)
+        end
+    end
+end)
 
 -- Thread pour les markers de farming (TOUJOURS avec E, pas ox_target)
 CreateThread(function()
@@ -306,8 +375,12 @@ RegisterNUICallback('processAlcohol', function(data, cb)
         return
     end
 
+    -- Répondre immédiatement au NUI pour éviter l'erreur 404
+    cb({success = true})
+
     -- Fermer l'UI
     SetNuiFocus(false, false)
+    SetNuiFocusKeepInput(false)
     SendNUIMessage({action = 'closeLab'})
 
     -- Animation
@@ -331,11 +404,9 @@ RegisterNUICallback('processAlcohol', function(data, cb)
     }) then
         ClearPedTasks(playerPed)
         TriggerServerEvent('zalco:processAlcohol', data.alcoholType, data.quality)
-        cb({success = true})
     else
         ClearPedTasks(playerPed)
         Notify({type = 'error', title = 'Annulé', message = 'Distillation annulée !', duration = 3000})
-        cb({success = false, message = 'Annulé'})
     end
 
     isBusy = false

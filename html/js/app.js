@@ -104,13 +104,12 @@ function openLab(alcoholTypes, levels) {
 
 // Traiter l'alcool
 function processAlcohol(alcoholType, quality) {
+    // Envoyer au client Lua
     $.post(`https://${GetParentResourceName()}/processAlcohol`, JSON.stringify({
         alcoholType: alcoholType,
         quality: quality
     }), (response) => {
-        if (response.success) {
-            // Succès géré côté client
-        } else {
+        if (!response.success) {
             console.error('Erreur:', response.message);
         }
     });
