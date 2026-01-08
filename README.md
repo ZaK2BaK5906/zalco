@@ -33,11 +33,25 @@ Chaque type d'alcool peut être produit en 3 qualités différentes :
 9. **Cognac** - Prix: 280$ / 550$ / 900$
 10. **Pastis** - Prix: 140$ / 280$ / 450$
 
-### 💰 Système de Vente
-- **3 PNJ receleurs** répartis sur la carte
-- Prix dynamiques avec variation aléatoire (-20% à +30%)
+### 💰 Système de Vente aux PNJ dans la Rue
+- **Vente directe aux piétons** avec ox_target
+- **Catégories de PNJ** : Business (riches), Gangs, SDF, Default
+- **Prix variables selon la catégorie** :
+  - Business : 100% à 150% du prix (argent propre)
+  - Gangs : 80% à 120% du prix (argent sale)
+  - SDF : 40% à 70% du prix (argent sale)
+  - Défaut : 70% à 100% du prix (argent propre)
+- **Système de refus** :
+  - Business : 60% de refus
+  - Gangs : 10% de refus
+  - SDF : 5% de refus
+  - Défaut : 30% de refus
+- **Risque d'appel police** (5% à 15% selon le PNJ)
+- **Zones interdites** (commissariats) avec alertes police
+- **Cooldowns** : 10s entre ventes, 1min par PNJ
+- **PNJ blacklistés** (flics, sécurité, etc.)
+- Vente d'**1 seul alcool** à la fois (aléatoire)
 - Reçu de vente détaillé avec UI custom
-- Argent sale (black_money)
 
 ### 📊 Système de Statistiques
 - **Tablette de contrebande** pour suivre les performances

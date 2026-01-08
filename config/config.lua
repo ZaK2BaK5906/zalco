@@ -213,45 +213,81 @@ Config.Labs = {
     }
 }
 
--- Points de vente (PNJ)
-Config.Sellers = {
-    {
-        name = 'Receleur - Docks',
-        coords = vector3(932.31, -2355.74, 30.58),
-        heading = 175.68,
-        ped = 's_m_m_dockwork_01',
-        scenario = 'WORLD_HUMAN_CLIPBOARD',
-        blip = {
-            enabled = false,
-            sprite = 500,
-            color = 6,
-            scale = 0.7
+-- Système de vente aux PNJ dans la rue
+Config.SellToPeds = {
+    enabled = true,
+    targetDistance = 2.5, -- Distance pour ox_target
+    cooldownBetweenSales = 10000, -- 10 secondes entre chaque vente
+    pedCooldown = 60000, -- 1 minute avant de pouvoir revendre au même PNJ
+
+    -- Zones interdites (commissariats, etc.)
+    forbiddenZones = {
+        {coords = vector3(425.1, -979.5, 30.7), radius = 100.0, name = 'LSPD Mission Row'},
+        {coords = vector3(1855.1, 3678.8, 33.8), radius = 80.0, name = 'BCSO Sandy Shores'},
+        {coords = vector3(-449.1, 6008.5, 31.7), radius = 80.0, name = 'BCSO Paleto Bay'},
+        {coords = vector3(-1093.4, -834.3, 19.0), radius = 50.0, name = 'Vespucci PD'},
+    },
+
+    -- Chance de refus selon le type de PNJ (en %)
+    refusalChance = {
+        default = 30, -- 30% de refus par défaut
+        business = 60, -- 60% pour les gens en costard
+        gang = 10, -- 10% pour les gangsters
+        homeless = 5, -- 5% pour les SDF
+    },
+
+    -- Chance d'appel à la police (en %)
+    policeCallChance = {
+        default = 5, -- 5% de chance d'appeler la police
+        business = 15, -- 15% pour les gens en costard
+        cop = 100, -- 100% pour les flics
+    },
+
+    -- Multiplicateur de prix selon le type de PNJ
+    priceMultiplier = {
+        default = {min = 0.7, max = 1.0}, -- Prix normal (70% à 100% du prix de base)
+        business = {min = 1.0, max = 1.5}, -- Gens riches payent plus (100% à 150%)
+        gang = {min = 0.8, max = 1.2}, -- Prix variable
+        homeless = {min = 0.4, max = 0.7}, -- SDF payent moins (40% à 70%)
+    },
+
+    -- Modèles de PNJ à ignorer (ne peuvent pas acheter)
+    blacklistedPeds = {
+        's_m_y_cop_01', 's_f_y_cop_01', 's_m_m_snowcop_01',
+        's_m_y_sheriff_01', 's_f_y_sheriff_01',
+        's_m_y_ranger_01', 's_f_y_ranger_01',
+        's_m_m_prisguard_01', 's_m_y_prisguard_01',
+        's_m_m_security_01', 's_m_y_armymech_01',
+    },
+
+    -- Catégories de PNJ (pour le prix et les chances)
+    pedCategories = {
+        business = { -- Gens riches/affaires
+            'a_m_m_business_01', 'a_m_y_business_01', 'a_m_y_business_02', 'a_m_y_business_03',
+            'a_f_m_business_02', 'a_f_y_business_01', 'a_f_y_business_02', 'a_f_y_business_03',
+            'a_f_y_business_04', 's_m_m_fiboffice_01', 's_m_m_fiboffice_02'
+        },
+        gang = { -- Gangsters
+            'a_m_y_mexthug_01', 'a_m_y_stbla_01', 'a_m_y_stbla_02', 'a_m_y_stwhi_01', 'a_m_y_stwhi_02',
+            'g_m_m_chigoon_01', 'g_m_m_chigoon_02', 'g_m_y_famca_01', 'g_m_y_famdnf_01', 'g_m_y_famfor_01',
+            'g_m_y_ballaeast_01', 'g_m_y_ballaorig_01', 'g_m_y_ballasout_01', 'ig_ballasog'
+        },
+        homeless = { -- SDF
+            'a_m_m_tramp_01', 'a_m_m_trampbeac_01', 'a_m_o_tramp_01'
         }
     },
-    {
-        name = 'Receleur - Sandy Shores',
-        coords = vector3(1961.95, 3740.48, 32.34),
-        heading = 298.37,
-        ped = 's_m_y_dealer_01',
-        scenario = 'WORLD_HUMAN_SMOKING',
-        blip = {
-            enabled = false,
-            sprite = 500,
-            color = 6,
-            scale = 0.7
-        }
-    },
-    {
-        name = 'Receleur - Paleto Bay',
-        coords = vector3(-770.14, 5594.21, 33.49),
-        heading = 82.57,
-        ped = 'g_m_m_chicold_01',
-        scenario = 'WORLD_HUMAN_DRUG_DEALER',
-        blip = {
-            enabled = false,
-            sprite = 500,
-            color = 6,
-            scale = 0.7
+
+    -- Animations lors de la vente
+    animations = {
+        player = {
+            dict = 'mp_common',
+            anim = 'givetake1_a',
+            flag = 49
+        },
+        ped = {
+            dict = 'mp_common',
+            anim = 'givetake2_a',
+            flag = 49
         }
     }
 }

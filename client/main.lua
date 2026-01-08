@@ -1,7 +1,11 @@
 ESX = exports['es_extended']:getSharedObject()
 local currentLab = nil
 local isBusy = false
-local sellerPeds = {}
+
+-- Système de vente aux PNJ dans la rue
+local pedsSold = {} -- PNJ déjà vendus (cooldown)
+local lastSaleTime = 0
+local isSelling = false
 
 -- Créer les blips
 CreateThread(function()
@@ -19,42 +23,96 @@ CreateThread(function()
             EndTextCommandSetBlipName(blip)
         end
     end
-
-    -- Blips des vendeurs (si activés)
-    for i, seller in pairs(Config.Sellers) do
-        if seller.blip.enabled then
-            local blip = AddBlipForCoord(seller.coords.x, seller.coords.y, seller.coords.z)
-            SetBlipSprite(blip, seller.blip.sprite)
-            SetBlipDisplay(blip, 4)
-            SetBlipScale(blip, seller.blip.scale)
-            SetBlipColour(blip, seller.blip.color)
-            SetBlipAsShortRange(blip, true)
-            BeginTextCommandSetBlipName('STRING')
-            AddTextComponentSubstringPlayerName(seller.name)
-            EndTextCommandSetBlipName(blip)
-        end
-    end
 end)
 
--- Spawner les PNJ vendeurs
+-- Fonction pour vérifier si on est dans une zone interdite
+local function IsInForbiddenZone()
+    local playerCoords = GetEntityCoords(PlayerPedId())
+    for _, zone in pairs(Config.SellToPeds.forbiddenZones) do
+        if #(playerCoords - zone.coords) < zone.radius then
+            return true, zone.name
+        end
+    end
+    return false, nil
+end
+
+-- Fonction pour obtenir la catégorie d'un PNJ
+local function GetPedCategory(pedModel)
+    for category, models in pairs(Config.SellToPeds.pedCategories) do
+        for _, model in pairs(models) do
+            if GetHashKey(model) == pedModel then
+                return category
+            end
+        end
+    end
+    return 'default'
+end
+
+-- Fonction pour vérifier si un PNJ est blacklisté
+local function IsPedBlacklisted(pedModel)
+    for _, model in pairs(Config.SellToPeds.blacklistedPeds) do
+        if GetHashKey(model) == pedModel then
+            return true
+        end
+    end
+    return false
+end
+
+-- Ajouter ox_target à tous les PNJ
 CreateThread(function()
-    for i, seller in pairs(Config.Sellers) do
-        RequestModel(GetHashKey(seller.ped))
-        while not HasModelLoaded(GetHashKey(seller.ped)) do
-            Wait(100)
+    if not Config.SellToPeds.enabled or not Config.UseTarget then return end
+
+    exports.ox_target:addGlobalPed({
+        {
+            name = 'sell_alcohol',
+            icon = 'fa-solid fa-bottle-droplet',
+            label = 'Proposer de l\'alcool',
+            canInteract = function(entity)
+                -- Vérifier que c'est un PNJ et pas un joueur
+                if IsPedAPlayer(entity) then return false end
+
+                -- Vérifier que le PNJ est pas mort
+                if IsEntityDead(entity) then return false end
+
+                -- Vérifier que le PNJ est pas blacklisté
+                local pedModel = GetEntityModel(entity)
+                if IsPedBlacklisted(pedModel) then return false end
+
+                -- Vérifier que le PNJ est pas dans un véhicule
+                if IsPedInAnyVehicle(entity, false) then return false end
+
+                -- Vérifier qu'on a pas déjà vendu à ce PNJ récemment
+                local pedId = NetworkGetNetworkIdFromEntity(entity)
+                if pedsSold[pedId] and (GetGameTimer() - pedsSold[pedId]) < Config.SellToPeds.pedCooldown then
+                    return false
+                end
+
+                -- Vérifier le cooldown global
+                if (GetGameTimer() - lastSaleTime) < Config.SellToPeds.cooldownBetweenSales then
+                    return false
+                end
+
+                return true
+            end,
+            onSelect = function(data)
+                local ped = data.entity
+                SellToPed(ped)
+            end,
+            distance = Config.SellToPeds.targetDistance
+        }
+    })
+end)
+
+-- Nettoyer les PNJ vendus périodiquement
+CreateThread(function()
+    while true do
+        Wait(60000) -- Toutes les minutes
+        local currentTime = GetGameTimer()
+        for pedId, time in pairs(pedsSold) do
+            if (currentTime - time) > Config.SellToPeds.pedCooldown then
+                pedsSold[pedId] = nil
+            end
         end
-
-        local ped = CreatePed(4, GetHashKey(seller.ped), seller.coords.x, seller.coords.y, seller.coords.z - 1.0, seller.heading, false, true)
-        SetEntityHeading(ped, seller.heading)
-        FreezeEntityPosition(ped, true)
-        SetEntityInvincible(ped, true)
-        SetBlockingOfNonTemporaryEvents(ped, true)
-
-        if seller.scenario then
-            TaskStartScenarioInPlace(ped, seller.scenario, 0, true)
-        end
-
-        sellerPeds[i] = ped
     end
 end)
 
@@ -116,25 +174,6 @@ CreateThread(function()
     end
 end)
 
--- Vendeurs
-CreateThread(function()
-    for i, seller in pairs(Config.Sellers) do
-        if Config.UseTarget then
-            exports.ox_target:addLocalEntity(sellerPeds[i], {
-                {
-                    name = 'seller_' .. i,
-                    icon = 'fa-solid fa-sack-dollar',
-                    label = 'Vendre l\'alcool',
-                    onSelect = function()
-                        SellAlcohol()
-                    end,
-                    distance = Config.InteractDistance
-                }
-            })
-        end
-    end
-end)
-
 -- Markers pour les points sans target
 if not Config.UseTarget then
     CreateThread(function()
@@ -171,18 +210,6 @@ if not Config.UseTarget then
                         if IsControlJustReleased(0, 38) then
                             OpenLabMenu(i)
                         end
-                    end
-                end
-            end
-
-            -- Sellers
-            for i, seller in pairs(Config.Sellers) do
-                local distance = #(playerCoords - seller.coords)
-                if distance < Config.InteractDistance then
-                    sleep = 0
-                    ESX.ShowHelpNotification('Appuyez sur ~INPUT_CONTEXT~ pour vendre votre alcool')
-                    if IsControlJustReleased(0, 38) then
-                        SellAlcohol()
                     end
                 end
             end
@@ -309,28 +336,97 @@ RegisterNUICallback('processAlcohol', function(data, cb)
     isBusy = false
 end)
 
--- Vendre l'alcool
-function SellAlcohol()
-    if isBusy then
-        Notify({type = 'error', title = 'Action en cours', message = 'Vous êtes déjà en train de faire quelque chose !', duration = 3000})
+-- Vendre à un PNJ dans la rue
+function SellToPed(ped)
+    if isSelling then
+        Notify({type = 'error', title = 'Vente en cours', message = 'Vous êtes déjà en train de vendre !', duration = 3000})
         return
     end
 
-    isBusy = true
-    local playerPed = PlayerPedId()
-
-    -- Animation
-    RequestAnimDict('mp_common')
-    while not HasAnimDictLoaded('mp_common') do
-        Wait(100)
+    -- Vérifier le cooldown global
+    if (GetGameTimer() - lastSaleTime) < Config.SellToPeds.cooldownBetweenSales then
+        local remaining = math.ceil((Config.SellToPeds.cooldownBetweenSales - (GetGameTimer() - lastSaleTime)) / 1000)
+        Notify({type = 'error', title = 'Cooldown', message = 'Attendez ' .. remaining .. ' secondes avant la prochaine vente !', duration = 3000})
+        return
     end
-    TaskPlayAnim(playerPed, 'mp_common', 'givetake1_a', 8.0, -8.0, -1, 1, 0, false, false, false)
 
-    Wait(2000)
-    ClearPedTasks(playerPed)
+    -- Vérifier si on est dans une zone interdite
+    local inForbiddenZone, zoneName = IsInForbiddenZone()
+    if inForbiddenZone then
+        Notify({type = 'error', title = 'Zone interdite', message = 'Vous ne pouvez pas vendre ici (' .. zoneName .. ') !', duration = 3000})
 
-    TriggerServerEvent('zalco:sellAlcohol')
-    isBusy = false
+        -- Chance d'appeler la police si zone interdite
+        if math.random(100) <= 50 then -- 50% de chance
+            TriggerServerEvent('zalco:alertPolice', GetEntityCoords(PlayerPedId()))
+            Notify({type = 'error', title = 'Police alertée !', message = 'Quelqu\'un a prévenu la police !', duration = 5000})
+        end
+        return
+    end
+
+    isSelling = true
+    local playerPed = PlayerPedId()
+    local pedModel = GetEntityModel(ped)
+    local pedCategory = GetPedCategory(pedModel)
+    local pedId = NetworkGetNetworkIdFromEntity(ped)
+
+    -- Faire regarder le PNJ vers le joueur
+    TaskTurnPedToFaceEntity(ped, playerPed, 2000)
+    Wait(500)
+
+    -- Envoyer au serveur pour vérifier qu'on a de l'alcool
+    lib.callback('zalco:canSellToPed', false, function(canSell, alcoholList)
+        if not canSell then
+            Notify({type = 'error', title = 'Aucun alcool', message = 'Vous n\'avez aucun alcool à vendre !', duration = 3000})
+            isSelling = false
+            return
+        end
+
+        -- Chance de refus selon la catégorie du PNJ
+        local refusalChance = Config.SellToPeds.refusalChance[pedCategory] or Config.SellToPeds.refusalChance.default
+        if math.random(100) <= refusalChance then
+            -- Refus
+            TaskPlayAnim(ped, 'gestures@m@standing@casual', 'gesture_no_way', 8.0, -8.0, 1500, 0, 0, false, false, false)
+            Notify({type = 'error', title = 'Refus', message = 'Le PNJ ne veut pas acheter...', duration = 3000})
+
+            -- Petite chance d'appeler la police même en cas de refus
+            local policeChance = Config.SellToPeds.policeCallChance[pedCategory] or Config.SellToPeds.policeCallChance.default
+            if math.random(100) <= policeChance then
+                TriggerServerEvent('zalco:alertPolice', GetEntityCoords(PlayerPedId()))
+                Notify({type = 'error', title = 'Police alertée !', message = 'Le PNJ a appelé la police !', duration = 5000})
+            end
+
+            isSelling = false
+            return
+        end
+
+        -- Acceptation de l'achat
+        -- Animations
+        RequestAnimDict(Config.SellToPeds.animations.player.dict)
+        RequestAnimDict(Config.SellToPeds.animations.ped.dict)
+
+        while not HasAnimDictLoaded(Config.SellToPeds.animations.player.dict) or
+              not HasAnimDictLoaded(Config.SellToPeds.animations.ped.dict) do
+            Wait(100)
+        end
+
+        TaskPlayAnim(playerPed, Config.SellToPeds.animations.player.dict, Config.SellToPeds.animations.player.anim, 8.0, -8.0, -1, Config.SellToPeds.animations.player.flag, 0, false, false, false)
+        TaskPlayAnim(ped, Config.SellToPeds.animations.ped.dict, Config.SellToPeds.animations.ped.anim, 8.0, -8.0, -1, Config.SellToPeds.animations.ped.flag, 0, false, false, false)
+
+        Wait(2000)
+        ClearPedTasks(playerPed)
+        ClearPedTasksImmediately(ped)
+
+        -- Faire partir le PNJ
+        TaskWanderStandard(ped, 10.0, 10)
+
+        -- Envoyer la vente au serveur
+        TriggerServerEvent('zalco:sellToPed', pedCategory, alcoholList)
+
+        -- Mettre à jour les cooldowns
+        pedsSold[pedId] = GetGameTimer()
+        lastSaleTime = GetGameTimer()
+        isSelling = false
+    end)
 end
 
 -- Recevoir le reçu de vente
@@ -383,6 +479,25 @@ end)
 -- Item utilisable : tablette
 exports('alcohol_tablet', function(data, slot)
     TriggerEvent('zalco:openTablet')
+end)
+
+-- Alerte police (blip sur la carte)
+RegisterNetEvent('zalco:policeAlert', function(coords)
+    local blip = AddBlipForCoord(coords.x, coords.y, coords.z)
+    SetBlipSprite(blip, 161)
+    SetBlipScale(blip, 1.2)
+    SetBlipColour(blip, 1)
+    BeginTextCommandSetBlipName('STRING')
+    AddTextComponentSubstringPlayerName('Vente d\'alcool illégale')
+    EndTextCommandSetBlipName(blip)
+
+    -- Faire clignoter le blip
+    SetBlipFlashes(blip, true)
+
+    -- Retirer le blip après 2 minutes
+    SetTimeout(120000, function()
+        RemoveBlip(blip)
+    end)
 end)
 
 if Config.Debug then

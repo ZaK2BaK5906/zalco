@@ -293,14 +293,13 @@ RegisterNetEvent('zalco:processAlcohol', function(alcoholType, quality)
     end
 end)
 
--- Event pour vendre l'alcool
-RegisterNetEvent('zalco:sellAlcohol', function()
+-- Callback pour vérifier si le joueur peut vendre aux PNJ
+lib.callback.register('zalco:canSellToPed', function(source)
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
-    if not xPlayer then return end
+    if not xPlayer then return false, {} end
 
-    local totalMoney = 0
-    local soldItems = {}
+    local alcoholList = {}
 
     -- Parcourir tous les types d'alcool
     for _, alcohol in pairs(Config.AlcoholTypes) do
@@ -308,28 +307,77 @@ RegisterNetEvent('zalco:sellAlcohol', function()
             local count = exports.ox_inventory:GetItem(src, quality.item, nil, true)
 
             if count > 0 then
-                -- Calculer le prix avec multiplicateur aléatoire
-                local multiplier = math.random(Config.PriceMultiplier.min * 100, Config.PriceMultiplier.max * 100) / 100
-                local price = math.floor(quality.sellPrice * multiplier)
-                local itemTotal = price * count
-
-                -- Retirer les items
-                exports.ox_inventory:RemoveItem(src, quality.item, count)
-
-                totalMoney = totalMoney + itemTotal
-                table.insert(soldItems, {
-                    name = alcohol.name .. ' (' .. quality.quality .. ')',
+                table.insert(alcoholList, {
+                    item = quality.item,
+                    name = alcohol.name,
+                    quality = quality.quality,
                     count = count,
-                    price = price,
-                    total = itemTotal
+                    basePrice = quality.sellPrice
                 })
             end
         end
     end
 
-    if totalMoney > 0 then
+    return #alcoholList > 0, alcoholList
+end)
+
+-- Event pour vendre l'alcool aux PNJ dans la rue
+RegisterNetEvent('zalco:sellToPed', function(pedCategory, alcoholList)
+    local src = source
+    local xPlayer = ESX.GetPlayerFromId(src)
+    if not xPlayer then return end
+
+    local totalMoney = 0
+    local soldItems = {}
+
+    -- Obtenir le multiplicateur de prix selon la catégorie du PNJ
+    local priceMulti = Config.SellToPeds.priceMultiplier[pedCategory] or Config.SellToPeds.priceMultiplier.default
+
+    -- Vendre UN SEUL alcool aléatoire (pas tout l'inventaire)
+    if #alcoholList > 0 then
+        local randomAlcohol = alcoholList[math.random(#alcoholList)]
+        local item = randomAlcohol.item
+        local count = 1 -- Vendre 1 seul
+
+        -- Vérifier qu'on a encore l'item
+        local hasItem = exports.ox_inventory:GetItem(src, item, nil, true)
+        if hasItem < count then
+            TriggerClientEvent('zalco:notify', src, {
+                type = 'error',
+                title = 'Erreur',
+                message = 'Vous n\'avez plus cet alcool !',
+                duration = 3000
+            })
+            return
+        end
+
+        -- Calculer le prix avec le multiplicateur de catégorie
+        local multiplier = math.random(priceMulti.min * 100, priceMulti.max * 100) / 100
+        local price = math.floor(randomAlcohol.basePrice * multiplier)
+        local itemTotal = price * count
+
+        -- Retirer l'item
+        exports.ox_inventory:RemoveItem(src, item, count)
+
+        totalMoney = totalMoney + itemTotal
+        table.insert(soldItems, {
+            name = randomAlcohol.name .. ' (' .. randomAlcohol.quality .. ')',
+            count = count,
+            price = price,
+            total = itemTotal
+        })
+
         -- Donner l'argent
-        exports.ox_inventory:AddItem(src, 'black_money', totalMoney)
+        local moneyType = 'money' -- Argent propre pour certaines catégories
+        if pedCategory == 'gang' or pedCategory == 'homeless' then
+            moneyType = 'black_money' -- Argent sale pour gangs et SDF
+        end
+
+        if moneyType == 'black_money' then
+            exports.ox_inventory:AddItem(src, 'black_money', totalMoney)
+        else
+            xPlayer.addMoney(totalMoney)
+        end
 
         -- Mettre à jour les stats
         local identifier = xPlayer.identifier
@@ -337,17 +385,19 @@ RegisterNetEvent('zalco:sellAlcohol', function()
             LoadPlayerStats(identifier)
         end
 
-        local totalSold = 0
-        for _, item in pairs(soldItems) do
-            totalSold = totalSold + item.count
-        end
-
-        playerStats[identifier].total_sold = playerStats[identifier].total_sold + totalSold
+        playerStats[identifier].total_sold = playerStats[identifier].total_sold + 1
         playerStats[identifier].money_earned = playerStats[identifier].money_earned + totalMoney
-        AddExperience(identifier, Config.Experience.selling * totalSold, 'selling')
+        AddExperience(identifier, Config.Experience.selling, 'selling')
 
         -- Envoyer les détails de la vente au client
         TriggerClientEvent('zalco:showSellReceipt', src, soldItems, totalMoney)
+
+        TriggerClientEvent('zalco:notify', src, {
+            type = 'success',
+            title = 'Vente réussie !',
+            message = 'Vous avez vendu ' .. randomAlcohol.name .. ' pour ' .. totalMoney .. '$',
+            duration = 3000
+        })
     else
         TriggerClientEvent('zalco:notify', src, {
             type = 'error',
@@ -355,6 +405,29 @@ RegisterNetEvent('zalco:sellAlcohol', function()
             message = 'Vous n\'avez aucun alcool à vendre !',
             duration = 3000
         })
+    end
+end)
+
+-- Event pour alerter la police
+RegisterNetEvent('zalco:alertPolice', function(coords)
+    local src = source
+    local xPlayer = ESX.GetPlayerFromId(src)
+    if not xPlayer then return end
+
+    -- Envoyer une alerte à tous les joueurs police
+    local xPlayers = ESX.GetExtendedPlayers()
+    for _, police in pairs(xPlayers) do
+        if police.job.name == 'police' then
+            TriggerClientEvent('zalco:notify', police.source, {
+                type = 'error',
+                title = 'Alerte Police',
+                message = 'Vente d\'alcool illégale signalée !',
+                duration = 5000
+            })
+
+            -- Optionnel : Ajouter un blip sur la carte pour la police
+            TriggerClientEvent('zalco:policeAlert', police.source, coords)
+        end
     end
 end)
 
