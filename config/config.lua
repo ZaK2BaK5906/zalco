@@ -28,53 +28,53 @@ Config.FarmingPoints = {
     {
         type = 'levure',
         label = 'Récolte de levure',
-        coords = vector3(1905.14, 4925.43, 48.86),
+        coords = vector3(1929.23, 4873.05, 46.07),
         item = 'levure',
         amount = {min = 1, max = 3},
         requiredItem = 'empty_bottle',
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
-            flag = 1
+            flag = 49
         }
     },
     {
         type = 'levure',
         label = 'Récolte de levure',
-        coords = vector3(2229.23, 5577.13, 53.85),
+        coords = vector3(1920.87, 4881.74, 46.23),
         item = 'levure',
         amount = {min = 1, max = 3},
         requiredItem = 'empty_bottle',
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
-            flag = 1
+            flag = 49
         }
     },
     {
         type = 'levure',
         label = 'Récolte de levure',
-        coords = vector3(1392.64, 3606.62, 38.94),
+        coords = vector3(1913.90, 4888.96, 46.56),
         item = 'levure',
         amount = {min = 1, max = 3},
         requiredItem = 'empty_bottle',
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
-            flag = 1
+            flag = 49
         }
     },
     {
         type = 'levure',
         label = 'Récolte de levure',
-        coords = vector3(2433.93, 4969.18, 46.81),
+        coords = vector3(1909.68, 4892.83, 47.05),
         item = 'levure',
         amount = {min = 1, max = 3},
         requiredItem = 'empty_bottle',
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
-            flag = 1
+            flag = 49
         }
     },
 
@@ -82,27 +82,27 @@ Config.FarmingPoints = {
     {
         type = 'eau',
         label = 'Récolte d\'eau de source',
-        coords = vector3(-1361.29, 4427.94, 35.47),
+        coords = vector3(1364.80, 4278.76, 30.35),
         item = 'eau_source',
         amount = {min = 2, max = 5},
         requiredItem = 'empty_bottle',
         animation = {
             dict = 'amb@prop_human_bum_bin@base',
             anim = 'base',
-            flag = 1
+            flag = 49
         }
     },
     {
         type = 'eau',
         label = 'Récolte d\'eau de source',
-        coords = vector3(1424.13, 6337.52, 23.99),
+        coords = vector3(1424.63, 3854.68, 30.33),
         item = 'eau_source',
         amount = {min = 2, max = 5},
         requiredItem = 'empty_bottle',
         animation = {
             dict = 'amb@prop_human_bum_bin@base',
             anim = 'base',
-            flag = 1
+            flag = 49
         }
     },
 
@@ -110,27 +110,27 @@ Config.FarmingPoints = {
     {
         type = 'sucre',
         label = 'Récolte de canne à sucre',
-        coords = vector3(2210.37, 5577.81, 53.85),
+        coords = vector3(2819.79, -746.01, 15.73),
         item = 'sucre',
         amount = {min = 1, max = 4},
         requiredItem = nil,
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
-            flag = 1
+            flag = 49
         }
     },
     {
         type = 'sucre',
         label = 'Récolte de canne à sucre',
-        coords = vector3(1699.74, 4787.28, 41.92),
+        coords = vector3(2825.78, -747.19, 16.48),
         item = 'sucre',
         amount = {min = 1, max = 4},
         requiredItem = nil,
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
-            flag = 1
+            flag = 49
         }
     },
 
@@ -138,53 +138,53 @@ Config.FarmingPoints = {
     {
         type = 'raisin',
         label = 'Récolte de raisin',
-        coords = vector3(1989.56, 4951.52, 41.87),
+        coords = vector3(322.28, 6482.87, 28.59),
         item = 'raisin',
         amount = {min = 2, max = 6},
         requiredItem = nil,
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
-            flag = 1
+            flag = 49
         }
     },
     {
         type = 'pomme',
         label = 'Récolte de pommes',
-        coords = vector3(361.82, 6495.49, 29.95),
+        coords = vector3(320.89, 6505.91, 28.27),
         item = 'pomme',
         amount = {min = 2, max = 6},
         requiredItem = nil,
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
-            flag = 1
+            flag = 49
         }
     },
     {
         type = 'mais',
         label = 'Récolte de maïs',
-        coords = vector3(2238.84, 4797.77, 41.13),
+        coords = vector3(272.78, 6455.01, 30.58),
         item = 'mais',
         amount = {min = 2, max = 6},
         requiredItem = nil,
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
-            flag = 1
+            flag = 49
         }
     },
     {
         type = 'orge',
         label = 'Récolte d\'orge',
-        coords = vector3(2852.89, 4704.34, 48.56),
+        coords = vector3(231.15, 6465.26, 30.41),
         item = 'orge',
         amount = {min = 2, max = 6},
         requiredItem = nil,
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
-            flag = 1
+            flag = 49
         }
     }
 }
@@ -193,7 +193,7 @@ Config.FarmingPoints = {
 Config.Labs = {
     {
         name = 'Labo #1 - Paleto Bay',
-        coords = vector3(-131.18, 6366.42, 31.48),
+        coords = vector3(1434.54, 6358.43, 24.28),
         blip = {
             enabled = false, -- Caché par défaut
             sprite = 499,
@@ -203,7 +203,7 @@ Config.Labs = {
     },
     {
         name = 'Labo #2 - Sandy Shores',
-        coords = vector3(1905.69, 4931.72, 48.86),
+        coords = vector3(32.23, -626.61, 11.18),
         blip = {
             enabled = false,
             sprite = 499,
@@ -213,84 +213,6 @@ Config.Labs = {
     }
 }
 
--- Système de vente aux PNJ dans la rue
-Config.SellToPeds = {
-    enabled = true,
-    targetDistance = 2.5, -- Distance pour ox_target
-    cooldownBetweenSales = 10000, -- 10 secondes entre chaque vente
-    pedCooldown = 60000, -- 1 minute avant de pouvoir revendre au même PNJ
-
-    -- Zones interdites (commissariats, etc.)
-    forbiddenZones = {
-        {coords = vector3(425.1, -979.5, 30.7), radius = 100.0, name = 'LSPD Mission Row'},
-        {coords = vector3(1855.1, 3678.8, 33.8), radius = 80.0, name = 'BCSO Sandy Shores'},
-        {coords = vector3(-449.1, 6008.5, 31.7), radius = 80.0, name = 'BCSO Paleto Bay'},
-        {coords = vector3(-1093.4, -834.3, 19.0), radius = 50.0, name = 'Vespucci PD'},
-    },
-
-    -- Chance de refus selon le type de PNJ (en %)
-    refusalChance = {
-        default = 30, -- 30% de refus par défaut
-        business = 60, -- 60% pour les gens en costard
-        gang = 10, -- 10% pour les gangsters
-        homeless = 5, -- 5% pour les SDF
-    },
-
-    -- Chance d'appel à la police (en %)
-    policeCallChance = {
-        default = 5, -- 5% de chance d'appeler la police
-        business = 15, -- 15% pour les gens en costard
-        cop = 100, -- 100% pour les flics
-    },
-
-    -- Multiplicateur de prix selon le type de PNJ
-    priceMultiplier = {
-        default = {min = 0.7, max = 1.0}, -- Prix normal (70% à 100% du prix de base)
-        business = {min = 1.0, max = 1.5}, -- Gens riches payent plus (100% à 150%)
-        gang = {min = 0.8, max = 1.2}, -- Prix variable
-        homeless = {min = 0.4, max = 0.7}, -- SDF payent moins (40% à 70%)
-    },
-
-    -- Modèles de PNJ à ignorer (ne peuvent pas acheter)
-    blacklistedPeds = {
-        's_m_y_cop_01', 's_f_y_cop_01', 's_m_m_snowcop_01',
-        's_m_y_sheriff_01', 's_f_y_sheriff_01',
-        's_m_y_ranger_01', 's_f_y_ranger_01',
-        's_m_m_prisguard_01', 's_m_y_prisguard_01',
-        's_m_m_security_01', 's_m_y_armymech_01',
-    },
-
-    -- Catégories de PNJ (pour le prix et les chances)
-    pedCategories = {
-        business = { -- Gens riches/affaires
-            'a_m_m_business_01', 'a_m_y_business_01', 'a_m_y_business_02', 'a_m_y_business_03',
-            'a_f_m_business_02', 'a_f_y_business_01', 'a_f_y_business_02', 'a_f_y_business_03',
-            'a_f_y_business_04', 's_m_m_fiboffice_01', 's_m_m_fiboffice_02'
-        },
-        gang = { -- Gangsters
-            'a_m_y_mexthug_01', 'a_m_y_stbla_01', 'a_m_y_stbla_02', 'a_m_y_stwhi_01', 'a_m_y_stwhi_02',
-            'g_m_m_chigoon_01', 'g_m_m_chigoon_02', 'g_m_y_famca_01', 'g_m_y_famdnf_01', 'g_m_y_famfor_01',
-            'g_m_y_ballaeast_01', 'g_m_y_ballaorig_01', 'g_m_y_ballasout_01', 'ig_ballasog'
-        },
-        homeless = { -- SDF
-            'a_m_m_tramp_01', 'a_m_m_trampbeac_01', 'a_m_o_tramp_01'
-        }
-    },
-
-    -- Animations lors de la vente
-    animations = {
-        player = {
-            dict = 'mp_common',
-            anim = 'givetake1_a',
-            flag = 49
-        },
-        ped = {
-            dict = 'mp_common',
-            anim = 'givetake2_a',
-            flag = 49
-        }
-    }
-}
 
 -- 10 types d'alcool avec différentes qualités
 Config.AlcoholTypes = {

@@ -104,7 +104,7 @@ function openLab(alcoholTypes, levels) {
 
 // Traiter l'alcool
 function processAlcohol(alcoholType, quality) {
-    // Envoyer au client Lua avec fetch au lieu de $.post pour éviter les 404
+    // Envoyer au client Lua - pas besoin de réponse
     fetch(`https://${GetParentResourceName()}/processAlcohol`, {
         method: 'POST',
         headers: {
@@ -114,12 +114,8 @@ function processAlcohol(alcoholType, quality) {
             alcoholType: alcoholType,
             quality: quality
         })
-    }).then(resp => resp.json()).then(response => {
-        if (!response.success) {
-            console.error('Erreur:', response.message);
-        }
     }).catch(error => {
-        console.error('Erreur de callback:', error);
+        // Ignorer les erreurs de callback
     });
 }
 
@@ -218,17 +214,15 @@ function openTablet(stats, levels) {
 
 // Fermer l'UI
 function closeUI() {
-    // Fermer l'UI et notifier le Lua
     closeAll();
+    // Notifier le Lua sans attendre de réponse
     fetch(`https://${GetParentResourceName()}/escape`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json; charset=UTF-8',
         },
         body: JSON.stringify({})
-    }).then(resp => resp.json()).catch(error => {
-        console.error('Erreur closeUI:', error);
-    });
+    }).catch(() => {});
 }
 
 function closeAll() {
@@ -241,16 +235,7 @@ function closeAll() {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         e.preventDefault();
-        // Notifier le client LUA que ESC a été pressé (un seul callback)
-        fetch(`https://${GetParentResourceName()}/escape`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=UTF-8',
-            },
-            body: JSON.stringify({})
-        }).then(resp => resp.json()).catch(error => {
-            console.error('Erreur escape:', error);
-        });
+        closeUI();
     }
 });
 

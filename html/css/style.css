@@ -98,18 +98,28 @@ body {
 }
 
 /* Scrollbar personnalisée */
-.modal-body::-webkit-scrollbar {
-    width: 8px;
+.modal-body::-webkit-scrollbar,
+.tablet-body::-webkit-scrollbar {
+    width: 10px;
 }
 
-.modal-body::-webkit-scrollbar-track {
+.modal-body::-webkit-scrollbar-track,
+.tablet-body::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
+    margin: 5px 0;
 }
 
-.modal-body::-webkit-scrollbar-thumb {
+.modal-body::-webkit-scrollbar-thumb,
+.tablet-body::-webkit-scrollbar-thumb {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover,
+.tablet-body::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #7c8ef5 0%, #8659b3 100%);
 }
 
 /* Liste d'alcools */
