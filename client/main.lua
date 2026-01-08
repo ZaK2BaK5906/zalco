@@ -7,6 +7,10 @@ local pedsSold = {} -- PNJ déjà vendus (cooldown)
 local lastSaleTime = 0
 local isSelling = false
 
+-- Système de notifications 3D
+local notifications = {}
+local nextNotifId = 1
+
 -- Créer les blips
 CreateThread(function()
     -- Blips des labos (si activés)
@@ -276,10 +280,19 @@ CreateThread(function()
     end
 end)
 
--- Fonction de farming
+-- Variables pour la progress bar custom
+local progressBarActive = false
+local progressBarData = {
+    progress = 0,
+    label = '',
+    startTime = 0,
+    duration = 0
+}
+
+-- Fonction de farming avec progress bar custom
 function FarmItem(index, point)
     if isBusy then
-        Notify({type = 'error', title = 'Action en cours', message = 'Vous êtes déjà en train de faire quelque chose !', duration = 3000})
+        ShowNotification('Action en cours', 'Vous êtes déjà en train de faire quelque chose !', 'error')
         return
     end
 
@@ -287,52 +300,120 @@ function FarmItem(index, point)
     HideStyledText()
     local playerPed = PlayerPedId()
 
-    -- S'assurer que le joueur est au sol
-    local playerCoords = GetEntityCoords(playerPed)
-    local groundZ = playerCoords.z
-    local foundGround, groundZ = GetGroundZFor_3dCoord(playerCoords.x, playerCoords.y, playerCoords.z, groundZ, false)
-
-    if foundGround then
-        SetEntityCoords(playerPed, playerCoords.x, playerCoords.y, groundZ, false, false, false, false)
-    end
-
-    Wait(100)
-
-    -- Animation
+    -- Animation SANS téléportation (c'est ça qui cause le float)
     if point.animation then
         RequestAnimDict(point.animation.dict)
         while not HasAnimDictLoaded(point.animation.dict) do
             Wait(100)
         end
-        -- Utiliser TaskPlayAnim avec flag 1 pour rester au sol
-        TaskPlayAnim(playerPed, point.animation.dict, point.animation.anim, 4.0, -4.0, -1, 1, 0, false, false, false)
+        -- Flag 49 = loop + upper body + cancelable = reste au sol
+        TaskPlayAnim(playerPed, point.animation.dict, point.animation.anim, 8.0, -8.0, -1, 49, 0, false, false, false)
     end
 
-    -- Progress bar
-    if lib.progressBar({
-        duration = Config.FarmingTime,
-        label = point.label,
-        useWhileDead = false,
-        canCancel = true,
-        disable = {
-            car = true,
-            move = true,
-            combat = true
-        },
-        anim = {
-            dict = point.animation.dict,
-            clip = point.animation.anim
-        }
-    }) then
-        ClearPedTasks(playerPed)
+    -- Progress bar custom 3D
+    progressBarActive = true
+    progressBarData.label = point.label
+    progressBarData.startTime = GetGameTimer()
+    progressBarData.duration = Config.FarmingTime
+    progressBarData.progress = 0
+
+    local cancelled = false
+
+    -- Attendre la fin ou annulation
+    while progressBarActive do
+        Wait(0)
+
+        -- Calculer progression
+        local elapsed = GetGameTimer() - progressBarData.startTime
+        progressBarData.progress = math.min(elapsed / progressBarData.duration, 1.0)
+
+        -- Vérifier annulation
+        if IsControlJustPressed(0, 73) then -- X key
+            cancelled = true
+            progressBarActive = false
+        end
+
+        -- Fin automatique
+        if progressBarData.progress >= 1.0 then
+            progressBarActive = false
+        end
+    end
+
+    ClearPedTasks(playerPed)
+
+    if not cancelled then
         TriggerServerEvent('zalco:farmItem', index)
     else
-        ClearPedTasks(playerPed)
-        Notify({type = 'error', title = 'Annulé', message = 'Action annulée !', duration = 3000})
+        ShowNotification('Annulé', 'Action annulée !', 'error')
     end
 
     isBusy = false
 end
+
+-- Thread pour afficher la progress bar 3D
+CreateThread(function()
+    while true do
+        Wait(0)
+        if progressBarActive then
+            local playerPed = PlayerPedId()
+            local boneCoords = GetPedBoneCoords(playerPed, 31086, 0.0, 0.0, 0.0)
+            local onScreen, screenX, screenY = World3dToScreen2d(boneCoords.x, boneCoords.y, boneCoords.z + 0.5)
+
+            if onScreen then
+                -- Fond de la barre
+                local barWidth = 0.15
+                local barHeight = 0.02
+                DrawRect(screenX, screenY, barWidth, barHeight, 30, 30, 30, 220)
+
+                -- Barre de progression
+                local progressWidth = barWidth * progressBarData.progress
+                DrawRect(screenX - (barWidth - progressWidth) / 2, screenY, progressWidth, barHeight, 102, 126, 234, 255)
+
+                -- Bordure
+                DrawRect(screenX, screenY - barHeight/2 - 0.001, barWidth, 0.002, 255, 255, 255, 150) -- Top
+                DrawRect(screenX, screenY + barHeight/2 + 0.001, barWidth, 0.002, 255, 255, 255, 150) -- Bottom
+                DrawRect(screenX - barWidth/2 - 0.001, screenY, 0.002, barHeight, 255, 255, 255, 150) -- Left
+                DrawRect(screenX + barWidth/2 + 0.001, screenY, 0.002, barHeight, 255, 255, 255, 150) -- Right
+
+                -- Texte du label
+                SetTextScale(0.3, 0.3)
+                SetTextFont(4)
+                SetTextProportional(1)
+                SetTextColour(255, 255, 255, 255)
+                SetTextOutline()
+                SetTextEntry("STRING")
+                SetTextCentre(1)
+                AddTextComponentString(progressBarData.label)
+                DrawText(screenX, screenY - 0.025)
+
+                -- Pourcentage
+                local percentage = math.floor(progressBarData.progress * 100)
+                SetTextScale(0.25, 0.25)
+                SetTextFont(4)
+                SetTextProportional(1)
+                SetTextColour(255, 255, 255, 255)
+                SetTextOutline()
+                SetTextEntry("STRING")
+                SetTextCentre(1)
+                AddTextComponentString(percentage .. '%')
+                DrawText(screenX, screenY + 0.015)
+
+                -- Aide annulation
+                SetTextScale(0.2, 0.2)
+                SetTextFont(4)
+                SetTextProportional(1)
+                SetTextColour(255, 255, 255, 180)
+                SetTextOutline()
+                SetTextEntry("STRING")
+                SetTextCentre(1)
+                AddTextComponentString('[X] Annuler')
+                DrawText(screenX, screenY + 0.035)
+            end
+        else
+            Wait(500)
+        end
+    end
+end)
 
 -- Ouvrir le menu du laboratoire
 function OpenLabMenu(labIndex)
@@ -383,30 +464,48 @@ RegisterNUICallback('processAlcohol', function(data, cb)
     SetNuiFocusKeepInput(false)
     SendNUIMessage({action = 'closeLab'})
 
-    -- Animation
+    -- Animation (flag 49 pour rester au sol)
     RequestAnimDict('anim@amb@business@weed@weed_inspecting_high_dry@')
     while not HasAnimDictLoaded('anim@amb@business@weed@weed_inspecting_high_dry@') do
         Wait(100)
     end
-    TaskPlayAnim(playerPed, 'anim@amb@business@weed@weed_inspecting_high_dry@', 'weed_inspecting_high_base_inspector', 8.0, -8.0, -1, 1, 0, false, false, false)
+    TaskPlayAnim(playerPed, 'anim@amb@business@weed@weed_inspecting_high_dry@', 'weed_inspecting_high_base_inspector', 8.0, -8.0, -1, 49, 0, false, false, false)
 
-    -- Progress bar
-    if lib.progressBar({
-        duration = alcohol.distillationTime,
-        label = 'Distillation en cours...',
-        useWhileDead = false,
-        canCancel = true,
-        disable = {
-            car = true,
-            move = true,
-            combat = true
-        }
-    }) then
-        ClearPedTasks(playerPed)
+    -- Progress bar custom 3D
+    progressBarActive = true
+    progressBarData.label = 'Distillation en cours...'
+    progressBarData.startTime = GetGameTimer()
+    progressBarData.duration = alcohol.distillationTime
+    progressBarData.progress = 0
+
+    local cancelled = false
+
+    -- Attendre la fin ou annulation
+    while progressBarActive do
+        Wait(0)
+
+        -- Calculer progression
+        local elapsed = GetGameTimer() - progressBarData.startTime
+        progressBarData.progress = math.min(elapsed / progressBarData.duration, 1.0)
+
+        -- Vérifier annulation
+        if IsControlJustPressed(0, 73) then -- X key
+            cancelled = true
+            progressBarActive = false
+        end
+
+        -- Fin automatique
+        if progressBarData.progress >= 1.0 then
+            progressBarActive = false
+        end
+    end
+
+    ClearPedTasks(playerPed)
+
+    if not cancelled then
         TriggerServerEvent('zalco:processAlcohol', data.alcoholType, data.quality)
     else
-        ClearPedTasks(playerPed)
-        Notify({type = 'error', title = 'Annulé', message = 'Distillation annulée !', duration = 3000})
+        ShowNotification('Annulé', 'Distillation annulée !', 'error')
     end
 
     isBusy = false
@@ -543,22 +642,136 @@ RegisterNetEvent('zalco:openTablet', function()
     end)
 end)
 
--- Système de notifications
-function Notify(data)
-    if Config.Notification == 'ox_lib' then
-        lib.notify({
-            title = data.title,
-            description = data.message,
-            type = data.type,
-            duration = data.duration
-        })
-    elseif Config.Notification == 'esx' then
-        ESX.ShowNotification(data.message)
+-- Système de notifications 3D custom
+function ShowNotification(title, message, notifType)
+    local id = nextNotifId
+    nextNotifId = nextNotifId + 1
+
+    -- Couleur selon le type
+    local color = {r = 102, g = 126, b = 234} -- default (bleu)
+    if notifType == 'error' then
+        color = {r = 231, g = 76, b = 60} -- rouge
+    elseif notifType == 'success' then
+        color = {r = 46, g = 204, b = 113} -- vert
+    elseif notifType == 'warning' then
+        color = {r = 241, g = 196, b = 15} -- jaune
     end
+
+    notifications[id] = {
+        title = title,
+        message = message,
+        color = color,
+        startTime = GetGameTimer(),
+        duration = 4000,
+        alpha = 0
+    }
+
+    -- Fade in
+    CreateThread(function()
+        local notif = notifications[id]
+        if not notif then return end
+
+        -- Fade in
+        for i = 0, 255, 15 do
+            if not notifications[id] then break end
+            notifications[id].alpha = i
+            Wait(10)
+        end
+
+        if notifications[id] then
+            notifications[id].alpha = 255
+        end
+
+        -- Attendre
+        Wait(notif.duration - 500)
+
+        -- Fade out
+        if notifications[id] then
+            for i = 255, 0, -15 do
+                if not notifications[id] then break end
+                notifications[id].alpha = i
+                Wait(10)
+            end
+        end
+
+        -- Supprimer
+        notifications[id] = nil
+    end)
+end
+
+-- Compatibilité avec l'ancien système Notify
+function Notify(data)
+    ShowNotification(data.title or 'Notification', data.message or '', data.type or 'info')
 end
 
 RegisterNetEvent('zalco:notify', function(data)
     Notify(data)
+end)
+
+-- Thread pour afficher les notifications 3D
+CreateThread(function()
+    while true do
+        Wait(0)
+        if next(notifications) then
+            local playerPed = PlayerPedId()
+            local playerCoords = GetEntityCoords(playerPed)
+            local camCoords = GetGameplayCamCoord()
+
+            local offsetIndex = 0
+            for id, notif in pairs(notifications) do
+                -- Position à droite de l'écran en haut
+                local notifCoords = vector3(
+                    playerCoords.x + 2.0,
+                    playerCoords.y,
+                    playerCoords.z + 1.5 - (offsetIndex * 0.25)
+                )
+
+                local onScreen, screenX, screenY = World3dToScreen2d(notifCoords.x, notifCoords.y, notifCoords.z)
+
+                -- Forcer à droite de l'écran
+                screenX = 0.85
+                screenY = 0.15 + (offsetIndex * 0.08)
+
+                -- Fond de la notification
+                local width = 0.2
+                local height = 0.06
+                DrawRect(screenX, screenY, width, height, 20, 20, 20, math.floor(notif.alpha * 0.9))
+
+                -- Barre de couleur à gauche
+                DrawRect(screenX - width/2 + 0.003, screenY, 0.006, height, notif.color.r, notif.color.g, notif.color.b, notif.alpha)
+
+                -- Bordure
+                DrawRect(screenX, screenY - height/2, width, 0.002, 255, 255, 255, math.floor(notif.alpha * 0.5))
+                DrawRect(screenX, screenY + height/2, width, 0.002, 255, 255, 255, math.floor(notif.alpha * 0.5))
+
+                -- Titre
+                SetTextScale(0.35, 0.35)
+                SetTextFont(4)
+                SetTextProportional(1)
+                SetTextColour(255, 255, 255, notif.alpha)
+                SetTextOutline()
+                SetTextEntry("STRING")
+                SetTextCentre(0)
+                AddTextComponentString(notif.title)
+                DrawText(screenX - width/2 + 0.015, screenY - 0.018)
+
+                -- Message
+                SetTextScale(0.25, 0.25)
+                SetTextFont(4)
+                SetTextProportional(1)
+                SetTextColour(200, 200, 200, notif.alpha)
+                SetTextOutline()
+                SetTextEntry("STRING")
+                SetTextCentre(0)
+                AddTextComponentString(notif.message)
+                DrawText(screenX - width/2 + 0.015, screenY + 0.005)
+
+                offsetIndex = offsetIndex + 1
+            end
+        else
+            Wait(500)
+        end
+    end
 end)
 
 -- Item utilisable : tablette
