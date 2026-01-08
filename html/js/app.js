@@ -74,7 +74,7 @@ function openLab(alcoholTypes, levels) {
                         <button class="quality-btn ${quality.quality === 'mauvaise' ? 'low' : quality.quality === 'moyenne' ? 'mid' : 'high'}"
                                 data-quality="${quality.quality}">
                             <div>${capitalizeFirst(quality.quality)}</div>
-                            <div class="quality-info">${quality.sellPrice}$ • ${alcohol.distillationTime / 1000}s</div>
+                            <div class="quality-info">${alcohol.distillationTime / 1000}s</div>
                         </button>
                     `).join('')}
                 </div>
