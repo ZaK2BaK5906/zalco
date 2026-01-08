@@ -434,16 +434,139 @@ RegisterNUICallback('escape', function(data, cb)
     SendNUIMessage({action = 'closeAll'})
 end)
 
--- Ouvrir la tablette
+-- Menu 3D pour voir les stats
+local statsMenuOpen = false
+local currentStats = nil
+
 RegisterNetEvent('zalco:openTablet', function()
     lib.callback('zalco:getStats', false, function(stats)
-        SendNUIMessage({
-            action = 'openTablet',
-            stats = stats,
-            levels = Config.Levels
-        })
-        SetNuiFocus(true, true)
+        if not stats then
+            ShowNotification('Erreur', 'Impossible de charger les statistiques', 'error')
+            return
+        end
+        currentStats = stats
+        statsMenuOpen = true
     end)
+end)
+
+-- Thread pour afficher le menu stats 3D
+CreateThread(function()
+    while true do
+        Wait(0)
+        if statsMenuOpen then
+            local playerPed = PlayerPedId()
+            local playerCoords = GetEntityCoords(playerPed)
+
+            -- Fermer avec ESC
+            if IsControlJustPressed(0, 322) then -- ESC
+                statsMenuOpen = false
+                currentStats = nil
+            end
+
+            -- Position à droite de l'écran
+            local screenX = 0.85
+            local screenY = 0.25
+
+            -- Fond
+            DrawRect(screenX, screenY, 0.25, 0.5, 20, 20, 20, 220)
+
+            -- Bordure violette
+            DrawRect(screenX, screenY - 0.25, 0.25, 0.003, 102, 126, 234, 255) -- Top
+            DrawRect(screenX, screenY + 0.25, 0.25, 0.003, 102, 126, 234, 255) -- Bottom
+            DrawRect(screenX - 0.125, screenY, 0.003, 0.5, 102, 126, 234, 255) -- Left
+            DrawRect(screenX + 0.125, screenY, 0.003, 0.5, 102, 126, 234, 255) -- Right
+
+            -- Titre
+            SetTextScale(0.45, 0.45)
+            SetTextFont(4)
+            SetTextProportional(1)
+            SetTextColour(255, 255, 255, 255)
+            SetTextOutline()
+            SetTextEntry("STRING")
+            SetTextCentre(1)
+            AddTextComponentString('~p~STATISTIQUES')
+            DrawText(screenX, screenY - 0.23)
+
+            -- Stats
+            local yOffset = screenY - 0.15
+            local lineHeight = 0.04
+
+            -- Niveau
+            SetTextScale(0.35, 0.35)
+            SetTextFont(4)
+            SetTextProportional(1)
+            SetTextColour(102, 126, 234, 255)
+            SetTextOutline()
+            SetTextEntry("STRING")
+            SetTextCentre(0)
+            AddTextComponentString('Niveau:')
+            DrawText(screenX - 0.11, yOffset)
+
+            SetTextColour(255, 255, 255, 255)
+            AddTextComponentString(tostring(currentStats.level))
+            DrawText(screenX + 0.05, yOffset)
+
+            -- XP
+            yOffset = yOffset + lineHeight
+            SetTextColour(102, 126, 234, 255)
+            AddTextComponentString('Expérience:')
+            DrawText(screenX - 0.11, yOffset)
+
+            SetTextColour(255, 255, 255, 255)
+            AddTextComponentString(tostring(currentStats.experience))
+            DrawText(screenX + 0.05, yOffset)
+
+            -- Items farmés
+            yOffset = yOffset + lineHeight
+            SetTextColour(102, 126, 234, 255)
+            AddTextComponentString('Items farmés:')
+            DrawText(screenX - 0.11, yOffset)
+
+            SetTextColour(255, 255, 255, 255)
+            AddTextComponentString(tostring(currentStats.total_farmed))
+            DrawText(screenX + 0.05, yOffset)
+
+            -- Alcools produits
+            yOffset = yOffset + lineHeight
+            SetTextColour(102, 126, 234, 255)
+            AddTextComponentString('Alcools produits:')
+            DrawText(screenX - 0.11, yOffset)
+
+            SetTextColour(255, 255, 255, 255)
+            AddTextComponentString(tostring(currentStats.total_processed))
+            DrawText(screenX + 0.05, yOffset)
+
+            -- Alcools vendus
+            yOffset = yOffset + lineHeight
+            SetTextColour(102, 126, 234, 255)
+            AddTextComponentString('Alcools vendus:')
+            DrawText(screenX - 0.11, yOffset)
+
+            SetTextColour(255, 255, 255, 255)
+            AddTextComponentString(tostring(currentStats.total_sold))
+            DrawText(screenX + 0.05, yOffset)
+
+            -- Argent gagné
+            yOffset = yOffset + lineHeight
+            SetTextColour(102, 126, 234, 255)
+            AddTextComponentString('Argent gagné:')
+            DrawText(screenX - 0.11, yOffset)
+
+            SetTextColour(46, 204, 113, 255) -- Vert
+            AddTextComponentString(tostring(currentStats.money_earned) .. '$')
+            DrawText(screenX + 0.05, yOffset)
+
+            -- Message de fermeture
+            yOffset = yOffset + lineHeight + 0.05
+            SetTextScale(0.25, 0.25)
+            SetTextColour(255, 255, 255, 180)
+            AddTextComponentString('[ESC] Fermer')
+            DrawText(screenX, yOffset)
+
+        else
+            Wait(500)
+        end
+    end
 end)
 
 -- Système de notifications 3D custom

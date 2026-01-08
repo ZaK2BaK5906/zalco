@@ -104,19 +104,10 @@ function openLab(alcoholTypes, levels) {
 
 // Traiter l'alcool
 function processAlcohol(alcoholType, quality) {
-    // Envoyer au client Lua - pas besoin de réponse
-    fetch(`https://${GetParentResourceName()}/processAlcohol`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: JSON.stringify({
-            alcoholType: alcoholType,
-            quality: quality
-        })
-    }).catch(error => {
-        // Ignorer les erreurs de callback
-    });
+    $.post(`https://${GetParentResourceName()}/processAlcohol`, JSON.stringify({
+        alcoholType: alcoholType,
+        quality: quality
+    }));
 }
 
 // Afficher le reçu de vente
@@ -215,14 +206,7 @@ function openTablet(stats, levels) {
 // Fermer l'UI
 function closeUI() {
     closeAll();
-    // Notifier le Lua sans attendre de réponse
-    fetch(`https://${GetParentResourceName()}/escape`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: JSON.stringify({})
-    }).catch(() => {});
+    $.post(`https://${GetParentResourceName()}/escape`, JSON.stringify({}));
 }
 
 function closeAll() {

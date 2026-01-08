@@ -214,15 +214,15 @@ Config.Labs = {
 }
 
 
--- 10 types d'alcool avec différentes qualités
+-- 8 types d'alcool avec différentes qualités (quantités augmentées pour plus de difficulté)
 Config.AlcoholTypes = {
     {
         name = 'Vodka',
         baseItem = 'vodka_base',
         qualities = {
-            {quality = 'mauvaise', item = 'vodka_low', sellPrice = 150, ingredients = {levure = 2, eau_source = 3, sucre = 1}},
-            {quality = 'moyenne', item = 'vodka_mid', sellPrice = 300, ingredients = {levure = 3, eau_source = 4, sucre = 2}},
-            {quality = 'bonne', item = 'vodka_high', sellPrice = 500, ingredients = {levure = 4, eau_source = 5, sucre = 3}}
+            {quality = 'mauvaise', item = 'vodka_low', sellPrice = 150, ingredients = {levure = 15, eau_source = 15, sucre = 20}},
+            {quality = 'moyenne', item = 'vodka_mid', sellPrice = 300, ingredients = {levure = 20, eau_source = 20, sucre = 25}},
+            {quality = 'bonne', item = 'vodka_high', sellPrice = 500, ingredients = {levure = 25, eau_source = 25, sucre = 30}}
         },
         distillationTime = 15000
     },
@@ -230,9 +230,9 @@ Config.AlcoholTypes = {
         name = 'Whisky',
         baseItem = 'whisky_base',
         qualities = {
-            {quality = 'mauvaise', item = 'whisky_low', sellPrice = 200, ingredients = {levure = 2, orge = 4, eau_source = 2}},
-            {quality = 'moyenne', item = 'whisky_mid', sellPrice = 400, ingredients = {levure = 3, orge = 6, eau_source = 3}},
-            {quality = 'bonne', item = 'whisky_high', sellPrice = 650, ingredients = {levure = 4, orge = 8, eau_source = 4}}
+            {quality = 'mauvaise', item = 'whisky_low', sellPrice = 200, ingredients = {levure = 15, orge = 20, eau_source = 15}},
+            {quality = 'moyenne', item = 'whisky_mid', sellPrice = 400, ingredients = {levure = 20, orge = 25, eau_source = 20}},
+            {quality = 'bonne', item = 'whisky_high', sellPrice = 650, ingredients = {levure = 25, orge = 30, eau_source = 25}}
         },
         distillationTime = 18000
     },
@@ -240,9 +240,9 @@ Config.AlcoholTypes = {
         name = 'Rhum',
         baseItem = 'rhum_base',
         qualities = {
-            {quality = 'mauvaise', item = 'rhum_low', sellPrice = 180, ingredients = {levure = 2, sucre = 5, eau_source = 2}},
-            {quality = 'moyenne', item = 'rhum_mid', sellPrice = 350, ingredients = {levure = 3, sucre = 7, eau_source = 3}},
-            {quality = 'bonne', item = 'rhum_high', sellPrice = 550, ingredients = {levure = 4, sucre = 10, eau_source = 4}}
+            {quality = 'mauvaise', item = 'rhum_low', sellPrice = 180, ingredients = {levure = 15, sucre = 20, eau_source = 15}},
+            {quality = 'moyenne', item = 'rhum_mid', sellPrice = 350, ingredients = {levure = 20, sucre = 25, eau_source = 20}},
+            {quality = 'bonne', item = 'rhum_high', sellPrice = 550, ingredients = {levure = 25, sucre = 30, eau_source = 25}}
         },
         distillationTime = 16000
     },
@@ -250,9 +250,9 @@ Config.AlcoholTypes = {
         name = 'Gin',
         baseItem = 'gin_base',
         qualities = {
-            {quality = 'mauvaise', item = 'gin_low', sellPrice = 170, ingredients = {levure = 2, orge = 3, eau_source = 3}},
-            {quality = 'moyenne', item = 'gin_mid', sellPrice = 320, ingredients = {levure = 3, orge = 5, eau_source = 4}},
-            {quality = 'bonne', item = 'gin_high', sellPrice = 520, ingredients = {levure = 4, orge = 7, eau_source = 5}}
+            {quality = 'mauvaise', item = 'gin_low', sellPrice = 170, ingredients = {levure = 15, orge = 20, eau_source = 15}},
+            {quality = 'moyenne', item = 'gin_mid', sellPrice = 320, ingredients = {levure = 20, orge = 25, eau_source = 20}},
+            {quality = 'bonne', item = 'gin_high', sellPrice = 520, ingredients = {levure = 25, orge = 30, eau_source = 25}}
         },
         distillationTime = 14000
     },
@@ -260,9 +260,9 @@ Config.AlcoholTypes = {
         name = 'Tequila',
         baseItem = 'tequila_base',
         qualities = {
-            {quality = 'mauvaise', item = 'tequila_low', sellPrice = 190, ingredients = {levure = 2, sucre = 4, eau_source = 2}},
-            {quality = 'moyenne', item = 'tequila_mid', sellPrice = 370, ingredients = {levure = 3, sucre = 6, eau_source = 3}},
-            {quality = 'bonne', item = 'tequila_high', sellPrice = 580, ingredients = {levure = 4, sucre = 8, eau_source = 4}}
+            {quality = 'mauvaise', item = 'tequila_low', sellPrice = 190, ingredients = {levure = 15, sucre = 20, eau_source = 15}},
+            {quality = 'moyenne', item = 'tequila_mid', sellPrice = 370, ingredients = {levure = 20, sucre = 25, eau_source = 20}},
+            {quality = 'bonne', item = 'tequila_high', sellPrice = 580, ingredients = {levure = 25, sucre = 30, eau_source = 25}}
         },
         distillationTime = 15000
     },
@@ -270,9 +270,9 @@ Config.AlcoholTypes = {
         name = 'Beer',
         baseItem = 'beer_base',
         qualities = {
-            {quality = 'mauvaise', item = 'beer_low', sellPrice = 120, ingredients = {levure = 2, orge = 5, eau_source = 3}},
-            {quality = 'moyenne', item = 'beer_mid', sellPrice = 250, ingredients = {levure = 3, orge = 7, eau_source = 4}},
-            {quality = 'bonne', item = 'beer_high', sellPrice = 420, ingredients = {levure = 4, orge = 10, eau_source = 5}}
+            {quality = 'mauvaise', item = 'beer_low', sellPrice = 120, ingredients = {levure = 15, orge = 20, eau_source = 15}},
+            {quality = 'moyenne', item = 'beer_mid', sellPrice = 250, ingredients = {levure = 20, orge = 25, eau_source = 20}},
+            {quality = 'bonne', item = 'beer_high', sellPrice = 420, ingredients = {levure = 25, orge = 30, eau_source = 25}}
         },
         distillationTime = 12000
     },
@@ -280,9 +280,9 @@ Config.AlcoholTypes = {
         name = 'Moonshine',
         baseItem = 'moonshine_base',
         qualities = {
-            {quality = 'mauvaise', item = 'moonshine_low', sellPrice = 220, ingredients = {levure = 3, mais = 5, sucre = 3}},
-            {quality = 'moyenne', item = 'moonshine_mid', sellPrice = 450, ingredients = {levure = 4, mais = 7, sucre = 4}},
-            {quality = 'bonne', item = 'moonshine_high', sellPrice = 700, ingredients = {levure = 5, mais = 10, sucre = 5}}
+            {quality = 'mauvaise', item = 'moonshine_low', sellPrice = 220, ingredients = {levure = 15, mais = 20, sucre = 20}},
+            {quality = 'moyenne', item = 'moonshine_mid', sellPrice = 450, ingredients = {levure = 20, mais = 25, sucre = 25}},
+            {quality = 'bonne', item = 'moonshine_high', sellPrice = 700, ingredients = {levure = 25, mais = 30, sucre = 30}}
         },
         distillationTime = 20000
     },
@@ -290,9 +290,9 @@ Config.AlcoholTypes = {
         name = 'Sake',
         baseItem = 'sake_base',
         qualities = {
-            {quality = 'mauvaise', item = 'sake_low', sellPrice = 200, ingredients = {levure = 2, sucre = 6, eau_source = 3}},
-            {quality = 'moyenne', item = 'sake_mid', sellPrice = 400, ingredients = {levure = 3, sucre = 9, eau_source = 4}},
-            {quality = 'bonne', item = 'sake_high', sellPrice = 650, ingredients = {levure = 4, sucre = 12, eau_source = 5}}
+            {quality = 'mauvaise', item = 'sake_low', sellPrice = 200, ingredients = {levure = 15, sucre = 20, eau_source = 15}},
+            {quality = 'moyenne', item = 'sake_mid', sellPrice = 400, ingredients = {levure = 20, sucre = 25, eau_source = 20}},
+            {quality = 'bonne', item = 'sake_high', sellPrice = 650, ingredients = {levure = 25, sucre = 30, eau_source = 25}}
         },
         distillationTime = 16000
     },
@@ -300,9 +300,9 @@ Config.AlcoholTypes = {
         name = 'Cognac',
         baseItem = 'cognac_base',
         qualities = {
-            {quality = 'mauvaise', item = 'cognac_low', sellPrice = 280, ingredients = {levure = 3, raisin = 8, eau_source = 3}},
-            {quality = 'moyenne', item = 'cognac_mid', sellPrice = 550, ingredients = {levure = 4, raisin = 12, eau_source = 4}},
-            {quality = 'bonne', item = 'cognac_high', sellPrice = 900, ingredients = {levure = 5, raisin = 16, eau_source = 5}}
+            {quality = 'mauvaise', item = 'cognac_low', sellPrice = 280, ingredients = {levure = 15, raisin = 25, eau_source = 15}},
+            {quality = 'moyenne', item = 'cognac_mid', sellPrice = 550, ingredients = {levure = 20, raisin = 30, eau_source = 20}},
+            {quality = 'bonne', item = 'cognac_high', sellPrice = 900, ingredients = {levure = 25, raisin = 35, eau_source = 25}}
         },
         distillationTime = 25000
     }
