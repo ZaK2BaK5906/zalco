@@ -345,14 +345,14 @@ Config.AlcoholTypes = {
         distillationTime = 15000
     },
     {
-        name = 'Calvados',
-        baseItem = 'calvados_base',
+        name = 'Beer',
+        baseItem = 'beer_base',
         qualities = {
-            {quality = 'mauvaise', item = 'calvados_low', sellPrice = 160, ingredients = {levure = 2, pomme = 6, eau_source = 2}},
-            {quality = 'moyenne', item = 'calvados_mid', sellPrice = 310, ingredients = {levure = 3, pomme = 9, eau_source = 3}},
-            {quality = 'bonne', item = 'calvados_high', sellPrice = 510, ingredients = {levure = 4, pomme = 12, eau_source = 4}}
+            {quality = 'mauvaise', item = 'beer_low', sellPrice = 120, ingredients = {levure = 2, orge = 5, eau_source = 3}},
+            {quality = 'moyenne', item = 'beer_mid', sellPrice = 250, ingredients = {levure = 3, orge = 7, eau_source = 4}},
+            {quality = 'bonne', item = 'beer_high', sellPrice = 420, ingredients = {levure = 4, orge = 10, eau_source = 5}}
         },
-        distillationTime = 17000
+        distillationTime = 12000
     },
     {
         name = 'Moonshine',
@@ -365,14 +365,14 @@ Config.AlcoholTypes = {
         distillationTime = 20000
     },
     {
-        name = 'Absinthe',
-        baseItem = 'absinthe_base',
+        name = 'Sake',
+        baseItem = 'sake_base',
         qualities = {
-            {quality = 'mauvaise', item = 'absinthe_low', sellPrice = 250, ingredients = {levure = 3, orge = 4, sucre = 4}},
-            {quality = 'moyenne', item = 'absinthe_mid', sellPrice = 500, ingredients = {levure = 4, orge = 6, sucre = 6}},
-            {quality = 'bonne', item = 'absinthe_high', sellPrice = 800, ingredients = {levure = 5, orge = 8, sucre = 8}}
+            {quality = 'mauvaise', item = 'sake_low', sellPrice = 200, ingredients = {levure = 2, sucre = 6, eau_source = 3}},
+            {quality = 'moyenne', item = 'sake_mid', sellPrice = 400, ingredients = {levure = 3, sucre = 9, eau_source = 4}},
+            {quality = 'bonne', item = 'sake_high', sellPrice = 650, ingredients = {levure = 4, sucre = 12, eau_source = 5}}
         },
-        distillationTime = 22000
+        distillationTime = 16000
     },
     {
         name = 'Cognac',
@@ -383,16 +383,6 @@ Config.AlcoholTypes = {
             {quality = 'bonne', item = 'cognac_high', sellPrice = 900, ingredients = {levure = 5, raisin = 16, eau_source = 5}}
         },
         distillationTime = 25000
-    },
-    {
-        name = 'Pastis',
-        baseItem = 'pastis_base',
-        qualities = {
-            {quality = 'mauvaise', item = 'pastis_low', sellPrice = 140, ingredients = {levure = 2, sucre = 3, eau_source = 4}},
-            {quality = 'moyenne', item = 'pastis_mid', sellPrice = 280, ingredients = {levure = 3, sucre = 4, eau_source = 6}},
-            {quality = 'bonne', item = 'pastis_high', sellPrice = 450, ingredients = {levure = 4, sucre = 6, eau_source = 8}}
-        },
-        distillationTime = 13000
     }
 }
 
@@ -411,9 +401,9 @@ Config.Experience = {
 
 -- Système de niveaux pour débloquer des recettes
 Config.Levels = {
-    {level = 0, name = 'Débutant', recipes = {'Vodka', 'Pastis'}},
+    {level = 0, name = 'Débutant', recipes = {'Vodka', 'Beer'}},
     {level = 50, name = 'Apprenti', recipes = {'Whisky', 'Gin', 'Rhum'}},
-    {level = 150, name = 'Distillateur', recipes = {'Tequila', 'Calvados'}},
-    {level = 300, name = 'Maître', recipes = {'Moonshine', 'Absinthe'}},
+    {level = 150, name = 'Distillateur', recipes = {'Tequila', 'Sake'}},
+    {level = 300, name = 'Maître', recipes = {'Moonshine'}},
     {level = 500, name = 'Légende', recipes = {'Cognac'}}
 }

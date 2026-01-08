@@ -261,38 +261,38 @@
 },
 
 -- ============================================
--- CALVADOS
+-- BEER (BIÈRE)
 -- ============================================
-['calvados_low'] = {
-    label = 'Calvados (Mauvaise qualité)',
-    weight = 860,
+['beer_low'] = {
+    label = 'Bière (Mauvaise qualité)',
+    weight = 500,
     stack = true,
     close = true,
-    description = 'Calvados artisanal de mauvaise qualité - Prix de vente: ~160$',
+    description = 'Bière artisanale de mauvaise qualité - Prix de vente: ~120$',
     client = {
-        image = 'calvados_low.png'
+        image = 'beer_low.png'
     }
 },
 
-['calvados_mid'] = {
-    label = 'Calvados (Qualité moyenne)',
-    weight = 860,
+['beer_mid'] = {
+    label = 'Bière (Qualité moyenne)',
+    weight = 500,
     stack = true,
     close = true,
-    description = 'Calvados artisanal de qualité moyenne - Prix de vente: ~310$',
+    description = 'Bière artisanale de qualité moyenne - Prix de vente: ~250$',
     client = {
-        image = 'calvados_mid.png'
+        image = 'beer_mid.png'
     }
 },
 
-['calvados_high'] = {
-    label = 'Calvados (Bonne qualité)',
-    weight = 860,
+['beer_high'] = {
+    label = 'Bière (Bonne qualité)',
+    weight = 500,
     stack = true,
     close = true,
-    description = 'Calvados artisanal de bonne qualité - Prix de vente: ~510$',
+    description = 'Bière artisanale de bonne qualité - Prix de vente: ~420$',
     client = {
-        image = 'calvados_high.png'
+        image = 'beer_high.png'
     }
 },
 
@@ -333,38 +333,38 @@
 },
 
 -- ============================================
--- ABSINTHE
+-- SAKE (SAKÉ)
 -- ============================================
-['absinthe_low'] = {
-    label = 'Absinthe (Mauvaise qualité)',
-    weight = 920,
+['sake_low'] = {
+    label = 'Sake (Mauvaise qualité)',
+    weight = 750,
     stack = true,
     close = true,
-    description = 'Absinthe artisanale de mauvaise qualité - Prix de vente: ~250$',
+    description = 'Sake artisanal de mauvaise qualité - Prix de vente: ~200$',
     client = {
-        image = 'absinthe_low.png'
+        image = 'sake_low.png'
     }
 },
 
-['absinthe_mid'] = {
-    label = 'Absinthe (Qualité moyenne)',
-    weight = 920,
+['sake_mid'] = {
+    label = 'Sake (Qualité moyenne)',
+    weight = 750,
     stack = true,
     close = true,
-    description = 'Absinthe artisanale de qualité moyenne - Prix de vente: ~500$',
+    description = 'Sake artisanal de qualité moyenne - Prix de vente: ~400$',
     client = {
-        image = 'absinthe_mid.png'
+        image = 'sake_mid.png'
     }
 },
 
-['absinthe_high'] = {
-    label = 'Absinthe (Bonne qualité)',
-    weight = 920,
+['sake_high'] = {
+    label = 'Sake (Bonne qualité)',
+    weight = 750,
     stack = true,
     close = true,
-    description = 'Absinthe artisanale de bonne qualité - Prix de vente: ~800$',
+    description = 'Sake artisanal de bonne qualité - Prix de vente: ~650$',
     client = {
-        image = 'absinthe_high.png'
+        image = 'sake_high.png'
     }
 },
 
@@ -404,38 +404,3 @@
     }
 },
 
--- ============================================
--- PASTIS
--- ============================================
-['pastis_low'] = {
-    label = 'Pastis (Mauvaise qualité)',
-    weight = 750,
-    stack = true,
-    close = true,
-    description = 'Pastis artisanal de mauvaise qualité - Prix de vente: ~140$',
-    client = {
-        image = 'pastis_low.png'
-    }
-},
-
-['pastis_mid'] = {
-    label = 'Pastis (Qualité moyenne)',
-    weight = 750,
-    stack = true,
-    close = true,
-    description = 'Pastis artisanal de qualité moyenne - Prix de vente: ~280$',
-    client = {
-        image = 'pastis_mid.png'
-    }
-},
-
-['pastis_high'] = {
-    label = 'Pastis (Bonne qualité)',
-    weight = 750,
-    stack = true,
-    close = true,
-    description = 'Pastis artisanal de bonne qualité - Prix de vente: ~450$',
-    client = {
-        image = 'pastis_high.png'
-    }
-},
