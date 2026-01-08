@@ -104,14 +104,22 @@ function openLab(alcoholTypes, levels) {
 
 // Traiter l'alcool
 function processAlcohol(alcoholType, quality) {
-    // Envoyer au client Lua
-    $.post(`https://${GetParentResourceName()}/processAlcohol`, JSON.stringify({
-        alcoholType: alcoholType,
-        quality: quality
-    }), (response) => {
+    // Envoyer au client Lua avec fetch au lieu de $.post pour éviter les 404
+    fetch(`https://${GetParentResourceName()}/processAlcohol`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: JSON.stringify({
+            alcoholType: alcoholType,
+            quality: quality
+        })
+    }).then(resp => resp.json()).then(response => {
         if (!response.success) {
             console.error('Erreur:', response.message);
         }
+    }).catch(error => {
+        console.error('Erreur de callback:', error);
     });
 }
 
@@ -210,8 +218,17 @@ function openTablet(stats, levels) {
 
 // Fermer l'UI
 function closeUI() {
-    $.post(`https://${GetParentResourceName()}/closeUI`, JSON.stringify({}));
+    // Fermer l'UI et notifier le Lua
     closeAll();
+    fetch(`https://${GetParentResourceName()}/escape`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: JSON.stringify({})
+    }).then(resp => resp.json()).catch(error => {
+        console.error('Erreur closeUI:', error);
+    });
 }
 
 function closeAll() {
@@ -224,9 +241,16 @@ function closeAll() {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         e.preventDefault();
-        // Notifier le client LUA que ESC a été pressé
-        $.post(`https://${GetParentResourceName()}/escape`, JSON.stringify({}));
-        closeUI();
+        // Notifier le client LUA que ESC a été pressé (un seul callback)
+        fetch(`https://${GetParentResourceName()}/escape`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8',
+            },
+            body: JSON.stringify({})
+        }).then(resp => resp.json()).catch(error => {
+            console.error('Erreur escape:', error);
+        });
     }
 });
 

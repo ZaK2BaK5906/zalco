@@ -517,18 +517,18 @@ end)
 
 -- Fermer l'UI
 RegisterNUICallback('closeUI', function(data, cb)
+    cb({success = true})
     SetNuiFocus(false, false)
     SetNuiFocusKeepInput(false)
     SendNUIMessage({action = 'closeAll'})
-    cb('ok')
 end)
 
 -- Fermer avec ESC
 RegisterNUICallback('escape', function(data, cb)
+    cb({success = true})
     SetNuiFocus(false, false)
     SetNuiFocusKeepInput(false)
     SendNUIMessage({action = 'closeAll'})
-    cb('ok')
 end)
 
 -- Ouvrir la tablette
