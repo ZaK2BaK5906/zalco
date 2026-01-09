@@ -206,7 +206,13 @@ function openTablet(stats, levels) {
 // Fermer l'UI
 function closeUI() {
     closeAll();
-    $.post(`https://${GetParentResourceName()}/closeTablet`, JSON.stringify({}));
+    fetch(`https://${GetParentResourceName()}/closeTablet`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+    }).catch(() => {});
 }
 
 function closeAll() {

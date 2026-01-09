@@ -516,8 +516,9 @@ end)
 
 -- Fermer la tablette
 RegisterNUICallback('closeTablet', function(data, cb)
-    cb('ok')
+    cb({success = true})
     SetNuiFocus(false, false)
+    SetNuiFocusKeepInput(false)
     SendNUIMessage({action = 'closeAll'})
 end)
 
