@@ -497,7 +497,7 @@ function ProcessAlcohol(alcohol, qualityData)
     isBusy = false
 end
 
--- Tablette de statistiques (NUI)
+-- Tablette de statistiques (ox_lib menu)
 RegisterNetEvent('zalco:openTablet', function()
     lib.callback('zalco:getStats', false, function(stats)
         if not stats then
@@ -505,21 +505,65 @@ RegisterNetEvent('zalco:openTablet', function()
             return
         end
 
-        SendNUIMessage({
-            action = 'openTablet',
-            stats = stats,
-            levels = Config.Levels
-        })
-        SetNuiFocus(true, true)
-    end)
-end)
+        -- Calculer l'XP pour le prochain niveau
+        local currentLevel = stats.level
+        local nextLevelXP = 0
+        local xpProgress = 0
 
--- Fermer la tablette
-RegisterNUICallback('closeTablet', function(data, cb)
-    cb({success = true})
-    SetNuiFocus(false, false)
-    SetNuiFocusKeepInput(false)
-    SendNUIMessage({action = 'closeAll'})
+        if Config.Levels[currentLevel + 2] then
+            nextLevelXP = Config.Levels[currentLevel + 2].level
+            xpProgress = math.floor((stats.experience / nextLevelXP) * 100)
+        end
+
+        -- Créer le menu des statistiques
+        local options = {
+            {
+                title = '📊 Niveau',
+                description = 'Niveau actuel: ' .. stats.level,
+                icon = 'chart-line',
+                readOnly = true
+            },
+            {
+                title = '⭐ Expérience',
+                description = stats.experience .. ' XP' .. (nextLevelXP > 0 and ' / ' .. nextLevelXP .. ' (' .. xpProgress .. '%)' or ' (Niveau Max)'),
+                icon = 'star',
+                readOnly = true
+            },
+            {
+                title = '🌾 Items farmés',
+                description = stats.total_farmed .. ' items récoltés',
+                icon = 'seedling',
+                readOnly = true
+            },
+            {
+                title = '🧪 Alcools produits',
+                description = stats.total_processed .. ' bouteilles distillées',
+                icon = 'flask',
+                readOnly = true
+            },
+            {
+                title = '📦 Alcools vendus',
+                description = stats.total_sold .. ' bouteilles vendues',
+                icon = 'box',
+                readOnly = true
+            },
+            {
+                title = '💰 Argent gagné',
+                description = stats.money_earned .. '$',
+                icon = 'dollar-sign',
+                readOnly = true
+            }
+        }
+
+        -- Enregistrer et afficher le menu
+        lib.registerContext({
+            id = 'zalco_tablet',
+            title = '📱 Tablette - Statistiques',
+            options = options
+        })
+
+        lib.showContext('zalco_tablet')
+    end)
 end)
 
 -- Système de notifications 3D custom
