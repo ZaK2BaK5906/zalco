@@ -293,18 +293,6 @@ RegisterNetEvent('zalco:processAlcohol', function(alcoholType, quality)
     end
 end)
 
--- Callback pour vérifier si le joueur peut vendre aux PNJ
-                title = 'Alerte Police',
-                message = 'Vente d\'alcool illégale signalée !',
-                duration = 5000
-            })
-
-            -- Optionnel : Ajouter un blip sur la carte pour la police
-            TriggerClientEvent('zalco:policeAlert', police.source, coords)
-        end
-    end
-end)
-
 -- Callback pour récupérer les stats
 lib.callback.register('zalco:getStats', function(source)
     local xPlayer = ESX.GetPlayerFromId(source)

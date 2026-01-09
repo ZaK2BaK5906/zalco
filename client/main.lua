@@ -320,54 +320,135 @@ CreateThread(function()
     end
 end)
 
--- Ouvrir le menu du laboratoire
+-- Ouvrir le menu du laboratoire avec ox_lib
 function OpenLabMenu(labIndex)
     if isBusy then
-        Notify({type = 'error', title = 'Action en cours', message = 'Vous êtes déjà en train de faire quelque chose !', duration = 3000})
+        ShowNotification('Action en cours', 'Vous êtes déjà en train de faire quelque chose !', 'error')
         return
     end
 
     currentLab = labIndex
-    SendNUIMessage({
-        action = 'openLab',
-        alcoholTypes = Config.AlcoholTypes,
-        levels = Config.Levels
+
+    -- Récupérer les stats pour vérifier le niveau
+    lib.callback('zalco:getStats', false, function(stats)
+        if not stats then
+            ShowNotification('Erreur', 'Impossible de charger vos informations', 'error')
+            return
+        end
+
+        -- Créer les options du menu principal
+        local options = {}
+
+        for _, alcohol in pairs(Config.AlcoholTypes) do
+            -- Vérifier si le joueur peut fabriquer cet alcool
+            local canCraft = false
+            for i = #Config.Levels, 1, -1 do
+                if stats.level >= i - 1 then
+                    for _, recipe in pairs(Config.Levels[i].recipes) do
+                        if recipe == alcohol.name then
+                            canCraft = true
+                            break
+                        end
+                    end
+                    if canCraft then break end
+                end
+            end
+
+            -- Construire la description avec les ingrédients
+            local description = 'Temps: ' .. (alcohol.distillationTime / 1000) .. 's\n'
+            if alcohol.qualities[1] and alcohol.qualities[1].ingredients then
+                description = description .. 'Ingrédients: '
+                local ingredientsList = {}
+                for ingredient, count in pairs(alcohol.qualities[1].ingredients) do
+                    table.insert(ingredientsList, count .. 'x ' .. ingredient)
+                end
+                description = description .. table.concat(ingredientsList, ', ')
+            end
+
+            table.insert(options, {
+                title = (canCraft and '' or '🔒 ') .. alcohol.name,
+                description = description,
+                disabled = not canCraft,
+                icon = 'bottle-droplet',
+                arrow = canCraft,
+                onSelect = function()
+                    OpenQualityMenu(alcohol, stats.level)
+                end
+            })
+        end
+
+        -- Enregistrer et afficher le menu principal
+        lib.registerContext({
+            id = 'zalco_lab_main',
+            title = '🧪 Laboratoire Clandestin',
+            options = options
+        })
+
+        lib.showContext('zalco_lab_main')
+    end)
+end
+
+-- Menu pour choisir la qualité
+function OpenQualityMenu(alcohol, playerLevel)
+    local options = {}
+
+    for _, quality in pairs(alcohol.qualities) do
+        -- Construire la description avec les ingrédients
+        local description = 'Ingrédients: '
+        local ingredientsList = {}
+        for ingredient, count in pairs(quality.ingredients) do
+            table.insert(ingredientsList, count .. 'x ' .. ingredient)
+        end
+        description = description .. table.concat(ingredientsList, ', ')
+
+        -- Icône selon la qualité
+        local icon = 'flask'
+        if quality.quality == 'mauvaise' then
+            icon = 'flask'
+        elseif quality.quality == 'moyenne' then
+            icon = 'flask-vial'
+        elseif quality.quality == 'bonne' then
+            icon = 'vial'
+        end
+
+        table.insert(options, {
+            title = quality.quality:gsub("^%l", string.upper),
+            description = description,
+            icon = icon,
+            onSelect = function()
+                ProcessAlcohol(alcohol, quality)
+            end
+        })
+    end
+
+    -- Ajouter option retour
+    table.insert(options, {
+        title = '← Retour',
+        icon = 'arrow-left',
+        onSelect = function()
+            OpenLabMenu(currentLab)
+        end
     })
-    SetNuiFocus(true, true)
+
+    lib.registerContext({
+        id = 'zalco_lab_quality',
+        title = '🧪 ' .. alcohol.name,
+        menu = 'zalco_lab_main',
+        options = options
+    })
+
+    lib.showContext('zalco_lab_quality')
 end
 
 -- Distiller l'alcool
-RegisterNUICallback('processAlcohol', function(data, cb)
+function ProcessAlcohol(alcohol, qualityData)
     if isBusy then
-        cb({success = false, message = 'Action déjà en cours'})
+        ShowNotification('Action en cours', 'Vous êtes déjà en train de faire quelque chose !', 'error')
         return
     end
 
     isBusy = true
     local playerPed = PlayerPedId()
-
-    -- Trouver l'alcool
-    local alcohol = nil
-    for _, v in pairs(Config.AlcoholTypes) do
-        if v.name == data.alcoholType then
-            alcohol = v
-            break
-        end
-    end
-
-    if not alcohol then
-        cb({success = false, message = 'Type d\'alcool invalide'})
-        isBusy = false
-        return
-    end
-
-    -- Répondre immédiatement au NUI pour éviter l'erreur 404
-    cb({success = true})
-
-    -- Fermer l'UI
-    SetNuiFocus(false, false)
-    SetNuiFocusKeepInput(false)
-    SendNUIMessage({action = 'closeLab'})
 
     -- Animation (flag 49 pour rester au sol)
     RequestAnimDict('anim@amb@business@weed@weed_inspecting_high_dry@')
@@ -408,165 +489,36 @@ RegisterNUICallback('processAlcohol', function(data, cb)
     ClearPedTasks(playerPed)
 
     if not cancelled then
-        TriggerServerEvent('zalco:processAlcohol', data.alcoholType, data.quality)
+        TriggerServerEvent('zalco:processAlcohol', alcohol.name, qualityData.quality)
     else
         ShowNotification('Annulé', 'Distillation annulée !', 'error')
     end
 
     isBusy = false
-end)
+end
 
--- Vendre à un PNJ dans la rue
-
--- Fermer l'UI
-RegisterNUICallback('closeUI', function(data, cb)
-    cb({success = true})
-    SetNuiFocus(false, false)
-    SetNuiFocusKeepInput(false)
-    SendNUIMessage({action = 'closeAll'})
-end)
-
--- Fermer avec ESC
-RegisterNUICallback('escape', function(data, cb)
-    cb({success = true})
-    SetNuiFocus(false, false)
-    SetNuiFocusKeepInput(false)
-    SendNUIMessage({action = 'closeAll'})
-end)
-
--- Menu 3D pour voir les stats
-local statsMenuOpen = false
-local currentStats = nil
-
+-- Tablette de statistiques (NUI)
 RegisterNetEvent('zalco:openTablet', function()
     lib.callback('zalco:getStats', false, function(stats)
         if not stats then
             ShowNotification('Erreur', 'Impossible de charger les statistiques', 'error')
             return
         end
-        currentStats = stats
-        statsMenuOpen = true
+
+        SendNUIMessage({
+            action = 'openTablet',
+            stats = stats,
+            levels = Config.Levels
+        })
+        SetNuiFocus(true, true)
     end)
 end)
 
--- Thread pour afficher le menu stats 3D
-CreateThread(function()
-    while true do
-        Wait(0)
-        if statsMenuOpen then
-            local playerPed = PlayerPedId()
-            local playerCoords = GetEntityCoords(playerPed)
-
-            -- Fermer avec ESC
-            if IsControlJustPressed(0, 322) then -- ESC
-                statsMenuOpen = false
-                currentStats = nil
-            end
-
-            -- Position à droite de l'écran
-            local screenX = 0.85
-            local screenY = 0.25
-
-            -- Fond
-            DrawRect(screenX, screenY, 0.25, 0.5, 20, 20, 20, 220)
-
-            -- Bordure violette
-            DrawRect(screenX, screenY - 0.25, 0.25, 0.003, 102, 126, 234, 255) -- Top
-            DrawRect(screenX, screenY + 0.25, 0.25, 0.003, 102, 126, 234, 255) -- Bottom
-            DrawRect(screenX - 0.125, screenY, 0.003, 0.5, 102, 126, 234, 255) -- Left
-            DrawRect(screenX + 0.125, screenY, 0.003, 0.5, 102, 126, 234, 255) -- Right
-
-            -- Titre
-            SetTextScale(0.45, 0.45)
-            SetTextFont(4)
-            SetTextProportional(1)
-            SetTextColour(255, 255, 255, 255)
-            SetTextOutline()
-            SetTextEntry("STRING")
-            SetTextCentre(1)
-            AddTextComponentString('~p~STATISTIQUES')
-            DrawText(screenX, screenY - 0.23)
-
-            -- Stats
-            local yOffset = screenY - 0.15
-            local lineHeight = 0.04
-
-            -- Niveau
-            SetTextScale(0.35, 0.35)
-            SetTextFont(4)
-            SetTextProportional(1)
-            SetTextColour(102, 126, 234, 255)
-            SetTextOutline()
-            SetTextEntry("STRING")
-            SetTextCentre(0)
-            AddTextComponentString('Niveau:')
-            DrawText(screenX - 0.11, yOffset)
-
-            SetTextColour(255, 255, 255, 255)
-            AddTextComponentString(tostring(currentStats.level))
-            DrawText(screenX + 0.05, yOffset)
-
-            -- XP
-            yOffset = yOffset + lineHeight
-            SetTextColour(102, 126, 234, 255)
-            AddTextComponentString('Expérience:')
-            DrawText(screenX - 0.11, yOffset)
-
-            SetTextColour(255, 255, 255, 255)
-            AddTextComponentString(tostring(currentStats.experience))
-            DrawText(screenX + 0.05, yOffset)
-
-            -- Items farmés
-            yOffset = yOffset + lineHeight
-            SetTextColour(102, 126, 234, 255)
-            AddTextComponentString('Items farmés:')
-            DrawText(screenX - 0.11, yOffset)
-
-            SetTextColour(255, 255, 255, 255)
-            AddTextComponentString(tostring(currentStats.total_farmed))
-            DrawText(screenX + 0.05, yOffset)
-
-            -- Alcools produits
-            yOffset = yOffset + lineHeight
-            SetTextColour(102, 126, 234, 255)
-            AddTextComponentString('Alcools produits:')
-            DrawText(screenX - 0.11, yOffset)
-
-            SetTextColour(255, 255, 255, 255)
-            AddTextComponentString(tostring(currentStats.total_processed))
-            DrawText(screenX + 0.05, yOffset)
-
-            -- Alcools vendus
-            yOffset = yOffset + lineHeight
-            SetTextColour(102, 126, 234, 255)
-            AddTextComponentString('Alcools vendus:')
-            DrawText(screenX - 0.11, yOffset)
-
-            SetTextColour(255, 255, 255, 255)
-            AddTextComponentString(tostring(currentStats.total_sold))
-            DrawText(screenX + 0.05, yOffset)
-
-            -- Argent gagné
-            yOffset = yOffset + lineHeight
-            SetTextColour(102, 126, 234, 255)
-            AddTextComponentString('Argent gagné:')
-            DrawText(screenX - 0.11, yOffset)
-
-            SetTextColour(46, 204, 113, 255) -- Vert
-            AddTextComponentString(tostring(currentStats.money_earned) .. '$')
-            DrawText(screenX + 0.05, yOffset)
-
-            -- Message de fermeture
-            yOffset = yOffset + lineHeight + 0.05
-            SetTextScale(0.25, 0.25)
-            SetTextColour(255, 255, 255, 180)
-            AddTextComponentString('[ESC] Fermer')
-            DrawText(screenX, yOffset)
-
-        else
-            Wait(500)
-        end
-    end
+-- Fermer la tablette
+RegisterNUICallback('closeTablet', function(data, cb)
+    cb('ok')
+    SetNuiFocus(false, false)
+    SendNUIMessage({action = 'closeAll'})
 end)
 
 -- Système de notifications 3D custom

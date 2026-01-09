@@ -82,7 +82,7 @@ Config.FarmingPoints = {
     {
         type = 'eau',
         label = 'Récolte d\'eau de source',
-        coords = vector3(1364.80, 4278.76, 30.35),
+        coords = vector3(1364.80, 4278.76, 31.0),
         item = 'eau_source',
         amount = {min = 2, max = 5},
         requiredItem = 'empty_bottle',
@@ -95,7 +95,7 @@ Config.FarmingPoints = {
     {
         type = 'eau',
         label = 'Récolte d\'eau de source',
-        coords = vector3(1424.63, 3854.68, 30.33),
+        coords = vector3(1424.63, 3854.68, 31.00),
         item = 'eau_source',
         amount = {min = 2, max = 5},
         requiredItem = 'empty_bottle',
@@ -138,7 +138,7 @@ Config.FarmingPoints = {
     {
         type = 'raisin',
         label = 'Récolte de raisin',
-        coords = vector3(322.28, 6482.87, 28.59),
+        coords = vector3(322.28, 6482.87, 29.00),
         item = 'raisin',
         amount = {min = 2, max = 6},
         requiredItem = nil,
@@ -151,7 +151,7 @@ Config.FarmingPoints = {
     {
         type = 'pomme',
         label = 'Récolte de pommes',
-        coords = vector3(320.89, 6505.91, 28.27),
+        coords = vector3(320.89, 6505.91, 29.00),
         item = 'pomme',
         amount = {min = 2, max = 6},
         requiredItem = nil,
@@ -164,7 +164,7 @@ Config.FarmingPoints = {
     {
         type = 'mais',
         label = 'Récolte de maïs',
-        coords = vector3(272.78, 6455.01, 30.58),
+        coords = vector3(272.78, 6455.01, 31.00),
         item = 'mais',
         amount = {min = 2, max = 6},
         requiredItem = nil,
@@ -177,7 +177,7 @@ Config.FarmingPoints = {
     {
         type = 'orge',
         label = 'Récolte d\'orge',
-        coords = vector3(231.15, 6465.26, 30.41),
+        coords = vector3(231.15, 6465.26, 31.00),
         item = 'orge',
         amount = {min = 2, max = 6},
         requiredItem = nil,
@@ -195,7 +195,7 @@ Config.Labs = {
         name = 'Labo #1 - Paleto Bay',
         coords = vector3(1434.54, 6358.43, 24.28),
         blip = {
-            enabled = false, -- Caché par défaut
+            enabled = false,
             sprite = 499,
             color = 1,
             scale = 0.8
@@ -213,8 +213,7 @@ Config.Labs = {
     }
 }
 
-
--- 8 types d'alcool avec différentes qualités (quantités augmentées pour plus de difficulté)
+-- 9 types d'alcool avec différentes qualités
 Config.AlcoholTypes = {
     {
         name = 'Vodka',
@@ -310,8 +309,8 @@ Config.AlcoholTypes = {
 
 -- Multiplicateur de prix aléatoire (demande du marché)
 Config.PriceMultiplier = {
-    min = 0.8, -- -20%
-    max = 1.3  -- +30%
+    min = 0.8,
+    max = 1.3
 }
 
 -- Expérience gagnée

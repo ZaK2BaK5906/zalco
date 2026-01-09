@@ -206,7 +206,7 @@ function openTablet(stats, levels) {
 // Fermer l'UI
 function closeUI() {
     closeAll();
-    $.post(`https://${GetParentResourceName()}/escape`, JSON.stringify({}));
+    $.post(`https://${GetParentResourceName()}/closeTablet`, JSON.stringify({}));
 }
 
 function closeAll() {
