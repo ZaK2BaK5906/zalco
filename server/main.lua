@@ -146,6 +146,19 @@ RegisterNetEvent('zalco:farmItem', function(pointIndex)
     -- Calculer la quantité aléatoire
     local amount = math.random(point.amount.min, point.amount.max)
 
+    -- Vérifier si le joueur peut porter cet item (poids)
+    local canCarry = exports.ox_inventory:CanCarryItem(src, point.item, amount)
+
+    if not canCarry then
+        TriggerClientEvent('zalco:notify', src, {
+            type = 'error',
+            title = 'Inventaire plein',
+            message = 'Vous ne pouvez pas porter ' .. amount .. 'x ' .. point.item .. ' !',
+            duration = 3000
+        })
+        return
+    end
+
     -- Ajouter l'item
     local success = exports.ox_inventory:AddItem(src, point.item, amount)
 
@@ -259,6 +272,19 @@ RegisterNetEvent('zalco:processAlcohol', function(alcoholType, quality)
         return
     end
 
+    -- Vérifier si le joueur peut porter l'alcool AVANT de retirer les ingrédients
+    local canCarry = exports.ox_inventory:CanCarryItem(src, qualityData.item, 1)
+
+    if not canCarry then
+        TriggerClientEvent('zalco:notify', src, {
+            type = 'error',
+            title = 'Inventaire plein',
+            message = 'Vous ne pouvez pas porter cet alcool ! Libérez de l\'espace.',
+            duration = 3000
+        })
+        return
+    end
+
     -- Retirer les ingrédients
     for ingredient, amount in pairs(qualityData.ingredients) do
         exports.ox_inventory:RemoveItem(src, ingredient, amount)
@@ -287,7 +313,7 @@ RegisterNetEvent('zalco:processAlcohol', function(alcoholType, quality)
         TriggerClientEvent('zalco:notify', src, {
             type = 'error',
             title = 'Erreur',
-            message = 'Inventaire plein !',
+            message = 'Erreur lors de la distillation ! Ingrédients rendus.',
             duration = 3000
         })
     end

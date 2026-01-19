@@ -18,7 +18,7 @@ Config.InteractDistance = 2.0
 
 -- Items nécessaires
 Config.RequiredItems = {
-    farming = 'empty_bottle', -- Bouteille vide pour farmer
+    -- farming = 'empty_bottle', -- Bouteille vide pour farmer
     tablet = 'alcohol_tablet' -- Tablette pour voir les stats
 }
 
@@ -31,7 +31,7 @@ Config.FarmingPoints = {
         coords = vector3(1929.23, 4873.05, 46.07),
         item = 'levure',
         amount = {min = 1, max = 3},
-        requiredItem = 'empty_bottle',
+        requiredItem = nil,
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
@@ -44,7 +44,7 @@ Config.FarmingPoints = {
         coords = vector3(1920.87, 4881.74, 46.23),
         item = 'levure',
         amount = {min = 1, max = 3},
-        requiredItem = 'empty_bottle',
+        requiredItem = nil,
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
@@ -57,7 +57,7 @@ Config.FarmingPoints = {
         coords = vector3(1913.90, 4888.96, 46.56),
         item = 'levure',
         amount = {min = 1, max = 3},
-        requiredItem = 'empty_bottle',
+        requiredItem = nil,
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
@@ -70,7 +70,7 @@ Config.FarmingPoints = {
         coords = vector3(1909.68, 4892.83, 47.05),
         item = 'levure',
         amount = {min = 1, max = 3},
-        requiredItem = 'empty_bottle',
+        requiredItem = nil,
         animation = {
             dict = 'anim@amb@business@weed@weed_inspecting_high_dry@',
             anim = 'weed_inspecting_high_base_inspector',
@@ -85,7 +85,7 @@ Config.FarmingPoints = {
         coords = vector3(1364.80, 4278.76, 31.0),
         item = 'eau_source',
         amount = {min = 2, max = 5},
-        requiredItem = 'empty_bottle',
+        requiredItem = nil,
         animation = {
             dict = 'amb@prop_human_bum_bin@base',
             anim = 'base',
@@ -98,7 +98,7 @@ Config.FarmingPoints = {
         coords = vector3(1424.63, 3854.68, 31.00),
         item = 'eau_source',
         amount = {min = 2, max = 5},
-        requiredItem = 'empty_bottle',
+        requiredItem = nil,
         animation = {
             dict = 'amb@prop_human_bum_bin@base',
             anim = 'base',
