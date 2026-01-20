@@ -436,3 +436,100 @@ exports('GetPlayerJobLevel', function(source, jobId)
     if not xPlayer then return 0, 1.0 end
     return GetPlayerLevel(xPlayer.identifier, jobId)
 end)
+
+-- =============================================================================
+-- MISSIONS ILLEGALES
+-- =============================================================================
+
+-- Debut mission illegale
+RegisterNetEvent('zalco_interim:startIllegalMission')
+AddEventHandler('zalco_interim:startIllegalMission', function(jobId, missionId)
+    local source = source
+    local xPlayer = ESX.GetPlayerFromId(source)
+    if not xPlayer then return end
+
+    if Config.Debug then
+        print(('[ZALCO_INTERIM] %s started illegal mission: %s (%s)'):format(
+            xPlayer.getName(), missionId, jobId
+        ))
+    end
+end)
+
+-- Mission illegale complete
+RegisterNetEvent('zalco_interim:completeIllegalMission')
+AddEventHandler('zalco_interim:completeIllegalMission', function(jobId, missionId, reward, xpBonus, policeAlert)
+    local source = source
+    local xPlayer = ESX.GetPlayerFromId(source)
+    if not xPlayer then return end
+
+    local identifier = xPlayer.identifier
+
+    -- Payer en argent sale (black_money)
+    xPlayer.addAccountMoney('black_money', reward, 'Mission illegale interim')
+
+    -- Ajouter XP bonus
+    if xpBonus and xpBonus > 0 then
+        AddXP(identifier, jobId, xpBonus)
+    end
+
+    -- Mettre a jour stats
+    local stats = PlayerStats[identifier]
+    if stats then
+        stats.total_earnings = stats.total_earnings + reward
+
+        local jobStats = GetPlayerJobStats(identifier, jobId)
+        if jobStats then
+            jobStats.earnings = jobStats.earnings + reward
+
+            -- Tracker missions illegales
+            if not jobStats.illegal_missions then
+                jobStats.illegal_missions = 0
+            end
+            jobStats.illegal_missions = jobStats.illegal_missions + 1
+        end
+
+        SavePlayerStats(identifier)
+    end
+
+    if Config.Debug then
+        print(('[ZALCO_INTERIM] %s completed illegal mission: %s | Reward: $%d (black_money) | Police: %s'):format(
+            xPlayer.getName(), missionId, reward, tostring(policeAlert)
+        ))
+    end
+
+    -- Alerte police si necessaire
+    if policeAlert then
+        -- Notifier les flics en ligne
+        local xPlayers = ESX.GetExtendedPlayers('job', 'police')
+        for _, cop in pairs(xPlayers) do
+            TriggerClientEvent('zalco_interim:policeAlert', cop.source, GetEntityCoords(GetPlayerPed(source)), 'Activite suspecte signalee')
+        end
+
+        if Config.Debug then
+            print('[ZALCO_INTERIM] Police alerted! ' .. #xPlayers .. ' cops notified')
+        end
+    end
+end)
+
+-- Mission illegale echouee
+RegisterNetEvent('zalco_interim:failIllegalMission')
+AddEventHandler('zalco_interim:failIllegalMission', function(jobId, missionId)
+    local source = source
+    local xPlayer = ESX.GetPlayerFromId(source)
+    if not xPlayer then return end
+
+    if Config.Debug then
+        print(('[ZALCO_INTERIM] %s failed illegal mission: %s (%s)'):format(
+            xPlayer.getName(), missionId or 'unknown', jobId
+        ))
+    end
+end)
+
+-- =============================================================================
+-- POLICE ALERT EVENT (Client)
+-- =============================================================================
+
+RegisterNetEvent('zalco_interim:policeAlert')
+AddEventHandler('zalco_interim:policeAlert', function(coords, message)
+    -- Ce event est trigger cote client pour les flics
+end)

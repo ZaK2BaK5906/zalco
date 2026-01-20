@@ -30,6 +30,24 @@ local jobBlips = {}
 local spawnedVehicle = nil
 local spawnedProp = nil
 
+-- Missions illegales
+local illegalMission = {
+    active = false,
+    pending = false, -- En attente de decision Y/N
+    data = nil,
+    blip = nil,
+    startTime = 0,
+    lastCheck = 0,
+    lastMissionTime = 0,
+}
+
+-- Debug
+local function DebugPrint(msg)
+    if Config.Debug then
+        print('[ZALCO_INTERIM] ' .. msg)
+    end
+end
+
 -- =============================================================================
 -- INITIALISATION
 -- =============================================================================
@@ -288,6 +306,43 @@ end
 
 -- Export pour autres scripts
 exports('ShowNotification3D', ShowNotification3D)
+
+-- Event pour notifications depuis le serveur
+RegisterNetEvent('zalco_interim:notify')
+AddEventHandler('zalco_interim:notify', function(message, type)
+    ShowNotification3D(message, type, 4000)
+end)
+
+-- Event pour alerte police
+RegisterNetEvent('zalco_interim:policeAlert')
+AddEventHandler('zalco_interim:policeAlert', function(coords, message)
+    -- Creer blip temporaire pour les flics
+    local blip = AddBlipForCoord(coords.x, coords.y, coords.z)
+    SetBlipSprite(blip, 161)
+    SetBlipScale(blip, 1.0)
+    SetBlipColour(blip, 1)
+    SetBlipFlashes(blip, true)
+    BeginTextCommandSetBlipName("STRING")
+    AddTextComponentString(message or "Activite suspecte")
+    EndTextCommandSetBlipName(blip)
+
+    ShowNotification3D(message or "Activite suspecte signalee!", 'warning', 8000)
+    PlaySoundFrontend(-1, "TIMER_STOP", "HUD_MINI_GAME_SOUNDSET", true)
+
+    -- Supprimer blip apres 60 secondes
+    SetTimeout(60000, function()
+        if DoesBlipExist(blip) then
+            RemoveBlip(blip)
+        end
+    end)
+end)
+
+-- Event pour level up
+RegisterNetEvent('zalco_interim:levelUp')
+AddEventHandler('zalco_interim:levelUp', function(jobId, newLevel, levelName)
+    ShowNotification3D('NIVEAU SUPERIEUR! Tu es maintenant ' .. levelName, 'success', 6000)
+    PlaySoundFrontend(-1, "MEDAL_UP", "HUD_MINI_GAME_SOUNDSET", true)
+end)
 
 -- Thread de rendu notifications
 CreateThread(function()
@@ -552,9 +607,49 @@ end
 -- JOB START/STOP
 -- =============================================================================
 
+-- =============================================================================
+-- CHECK REQUIRED TOOLS
+-- =============================================================================
+
+function HasRequiredTool(jobId)
+    local jobData = Config.Jobs[jobId]
+    if not jobData then return false end
+
+    -- Check pickaxe pour mineur
+    if jobData.requiredItem then
+        local hasItem = exports.ox_inventory:Search('count', jobData.requiredItem) > 0
+        if not hasItem then
+            ShowNotification3D('Tu as besoin d\'une ' .. jobData.requiredItem .. '!', 'error', 4000)
+            return false
+        end
+    end
+
+    -- Check haches pour bucheron
+    if jobData.requiredAxes then
+        local hasAxe = false
+        for _, axe in ipairs(jobData.requiredAxes) do
+            if exports.ox_inventory:Search('count', axe) > 0 then
+                hasAxe = true
+                break
+            end
+        end
+        if not hasAxe then
+            ShowNotification3D('Tu as besoin d\'une hache!', 'error', 4000)
+            return false
+        end
+    end
+
+    return true
+end
+
 function StartJob(jobId)
     local jobData = Config.Jobs[jobId]
     if not jobData then return end
+
+    -- Check outils requis
+    if not HasRequiredTool(jobId) then
+        return
+    end
 
     isWorking = true
     currentJob = jobId
@@ -1181,3 +1276,361 @@ CreateThread(function()
         end
     end
 end)
+
+-- =============================================================================
+-- MISSIONS ILLEGALES SYSTEM
+-- =============================================================================
+
+-- Thread pour check si une mission illegale doit pop
+CreateThread(function()
+    while true do
+        if Config.IllegalMissions.enabled and isWorking and currentJob then
+            local currentTime = GetGameTimer()
+
+            -- Verifier cooldown
+            if currentTime - illegalMission.lastCheck >= Config.IllegalMissions.checkInterval then
+                illegalMission.lastCheck = currentTime
+
+                -- Verifier si pas deja en mission et cooldown respecte
+                if not illegalMission.active and not illegalMission.pending then
+                    if currentTime - illegalMission.lastMissionTime >= Config.IllegalMissions.cooldown then
+                        -- Roll pour voir si mission pop
+                        local roll = math.random(1, 100)
+                        DebugPrint('Mission roll: ' .. roll .. ' (need <= ' .. Config.IllegalMissions.chance .. ')')
+
+                        if roll <= Config.IllegalMissions.chance then
+                            TriggerIllegalMission()
+                        end
+                    end
+                end
+            end
+
+            Wait(5000)
+        else
+            Wait(10000)
+        end
+    end
+end)
+
+function TriggerIllegalMission()
+    local jobData = Config.Jobs[currentJob]
+    if not jobData or not jobData.illegalMissions then return end
+
+    -- Choisir une mission aleatoire
+    local missionIndex = math.random(1, #jobData.illegalMissions)
+    local mission = jobData.illegalMissions[missionIndex]
+
+    illegalMission.pending = true
+    illegalMission.data = mission
+    illegalMission.decisionStart = GetGameTimer()
+
+    DebugPrint('Mission illegale proposee: ' .. mission.label)
+
+    -- Notification speciale
+    PlaySoundFrontend(-1, "Phone_Generic_Key", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
+    ShowNotification3D('Un type louche te propose un plan...', 'warning', 6000)
+end
+
+-- Thread pour afficher UI de decision mission illegale
+CreateThread(function()
+    while true do
+        if illegalMission.pending and illegalMission.data then
+            Wait(0)
+
+            local elapsed = GetGameTimer() - illegalMission.decisionStart
+            local remaining = math.max(0, math.floor((Config.IllegalMissions.decisionTime - elapsed) / 1000))
+
+            -- Background panel
+            local panelX = 0.5
+            local panelY = 0.25
+            local panelW = 0.25
+            local panelH = 0.12
+
+            DrawRect(panelX, panelY, panelW, panelH, 20, 20, 30, 240)
+
+            -- Accent bar violet (illegal)
+            DrawRect(panelX - panelW / 2 + 0.004, panelY, 0.008, panelH,
+                Config.Colors.illegal[1], Config.Colors.illegal[2], Config.Colors.illegal[3], 255)
+
+            -- Border
+            DrawRect(panelX, panelY - panelH / 2, panelW, 0.003,
+                Config.Colors.illegal[1], Config.Colors.illegal[2], Config.Colors.illegal[3], 255)
+
+            -- Title
+            SetTextScale(0.4, 0.4)
+            SetTextFont(4)
+            SetTextColour(Config.Colors.illegal[1], Config.Colors.illegal[2], Config.Colors.illegal[3], 255)
+            SetTextCentre(true)
+            SetTextEntry("STRING")
+            AddTextComponentString('PROPOSITION LOUCHE')
+            DrawText(panelX, panelY - 0.05)
+
+            -- Mission label
+            SetTextScale(0.32, 0.32)
+            SetTextFont(4)
+            SetTextColour(255, 255, 255, 255)
+            SetTextCentre(true)
+            SetTextEntry("STRING")
+            AddTextComponentString(illegalMission.data.label)
+            DrawText(panelX, panelY - 0.02)
+
+            -- Description
+            SetTextScale(0.25, 0.25)
+            SetTextFont(4)
+            SetTextColour(200, 200, 200, 255)
+            SetTextCentre(true)
+            SetTextEntry("STRING")
+            AddTextComponentString(illegalMission.data.description)
+            DrawText(panelX, panelY + 0.005)
+
+            -- Reward
+            SetTextScale(0.28, 0.28)
+            SetTextFont(4)
+            SetTextColour(Config.Colors.success[1], Config.Colors.success[2], Config.Colors.success[3], 255)
+            SetTextCentre(true)
+            SetTextEntry("STRING")
+            AddTextComponentString('Recompense: $' .. illegalMission.data.reward .. ' (argent sale)')
+            DrawText(panelX, panelY + 0.03)
+
+            -- Timer + Controls
+            SetTextScale(0.25, 0.25)
+            SetTextFont(4)
+            SetTextColour(255, 255, 255, 200)
+            SetTextCentre(true)
+            SetTextEntry("STRING")
+            AddTextComponentString('[Y] Accepter | [N] Refuser | ' .. remaining .. 's')
+            DrawText(panelX, panelY + 0.05)
+
+            -- Input handling
+            if IsControlJustPressed(0, 246) then -- Y key
+                AcceptIllegalMission()
+            elseif IsControlJustPressed(0, 249) then -- N key
+                RefuseIllegalMission()
+            end
+
+            -- Timeout
+            if elapsed >= Config.IllegalMissions.decisionTime then
+                RefuseIllegalMission()
+            end
+        else
+            Wait(500)
+        end
+    end
+end)
+
+function AcceptIllegalMission()
+    if not illegalMission.pending or not illegalMission.data then return end
+
+    local mission = illegalMission.data
+
+    illegalMission.pending = false
+    illegalMission.active = true
+    illegalMission.startTime = GetGameTimer()
+
+    DebugPrint('Mission acceptee: ' .. mission.label)
+
+    ShowNotification3D('Mission acceptee! ' .. mission.label, 'success', 4000)
+    PlaySoundFrontend(-1, "PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
+
+    -- Creer blip si mission avec coords
+    if mission.targetCoords then
+        local blip = AddBlipForCoord(mission.targetCoords.x, mission.targetCoords.y, mission.targetCoords.z)
+        SetBlipSprite(blip, 458)
+        SetBlipScale(blip, 0.9)
+        SetBlipColour(blip, 27) -- Violet
+        SetBlipRoute(blip, true)
+        SetBlipRouteColour(blip, 27)
+        BeginTextCommandSetBlipName("STRING")
+        AddTextComponentString("Mission: " .. mission.label)
+        EndTextCommandSetBlipName(blip)
+        illegalMission.blip = blip
+    end
+
+    TriggerServerEvent('zalco_interim:startIllegalMission', currentJob, mission.id)
+end
+
+function RefuseIllegalMission()
+    if not illegalMission.pending then return end
+
+    illegalMission.pending = false
+    illegalMission.data = nil
+    illegalMission.lastMissionTime = GetGameTimer()
+
+    DebugPrint('Mission refusee')
+
+    ShowNotification3D('Tu as refuse le plan...', 'info', 3000)
+end
+
+function CompleteIllegalMission()
+    if not illegalMission.active or not illegalMission.data then return end
+
+    local mission = illegalMission.data
+
+    -- Supprimer blip
+    if illegalMission.blip and DoesBlipExist(illegalMission.blip) then
+        RemoveBlip(illegalMission.blip)
+        illegalMission.blip = nil
+    end
+
+    -- Check police alert
+    local policeRoll = math.random(1, 100)
+    local policeAlert = policeRoll <= Config.IllegalMissions.policeAlertChance
+
+    DebugPrint('Mission complete! Police roll: ' .. policeRoll .. ' (alert if <= ' .. Config.IllegalMissions.policeAlertChance .. ')')
+
+    TriggerServerEvent('zalco_interim:completeIllegalMission', currentJob, mission.id, mission.reward, mission.xpBonus, policeAlert)
+
+    if policeAlert then
+        ShowNotification3D('Mission terminee mais les flics ont ete alertes!', 'warning', 5000)
+        -- Donner wanted level
+        SetPlayerWantedLevel(PlayerId(), 2, false)
+        SetPlayerWantedLevelNow(PlayerId(), false)
+    else
+        ShowNotification3D('Mission terminee! +$' .. mission.reward .. ' (argent sale)', 'success', 5000)
+    end
+
+    PlaySoundFrontend(-1, "MEDAL_UP", "HUD_MINI_GAME_SOUNDSET", true)
+
+    currentShift.earnings = currentShift.earnings + mission.reward
+
+    -- Reset
+    illegalMission.active = false
+    illegalMission.data = nil
+    illegalMission.lastMissionTime = GetGameTimer()
+end
+
+function FailIllegalMission(reason)
+    if not illegalMission.active then return end
+
+    -- Supprimer blip
+    if illegalMission.blip and DoesBlipExist(illegalMission.blip) then
+        RemoveBlip(illegalMission.blip)
+        illegalMission.blip = nil
+    end
+
+    ShowNotification3D('Mission echouee: ' .. (reason or 'Temps ecoule'), 'error', 4000)
+
+    TriggerServerEvent('zalco_interim:failIllegalMission', currentJob, illegalMission.data and illegalMission.data.id)
+
+    -- Reset
+    illegalMission.active = false
+    illegalMission.data = nil
+    illegalMission.lastMissionTime = GetGameTimer()
+end
+
+-- Thread pour gerer mission illegale active
+CreateThread(function()
+    while true do
+        if illegalMission.active and illegalMission.data then
+            Wait(0)
+
+            local mission = illegalMission.data
+            local elapsed = GetGameTimer() - illegalMission.startTime
+            local remaining = math.max(0, math.floor((mission.time - elapsed) / 1000))
+
+            -- Afficher timer mission
+            local timerX = 0.5
+            local timerY = 0.08
+
+            DrawRect(timerX, timerY, 0.15, 0.04, 20, 20, 30, 200)
+            DrawRect(timerX - 0.075 + 0.003, timerY, 0.006, 0.04,
+                Config.Colors.illegal[1], Config.Colors.illegal[2], Config.Colors.illegal[3], 255)
+
+            SetTextScale(0.3, 0.3)
+            SetTextFont(4)
+            SetTextColour(Config.Colors.illegal[1], Config.Colors.illegal[2], Config.Colors.illegal[3], 255)
+            SetTextCentre(true)
+            SetTextEntry("STRING")
+            AddTextComponentString('MISSION: ' .. remaining .. 's')
+            DrawText(timerX + 0.005, timerY - 0.012)
+
+            -- Check timeout
+            if elapsed >= mission.time then
+                FailIllegalMission('Temps ecoule')
+            end
+
+            -- Mission avec items a collecter
+            if mission.targetItem and mission.targetAmount then
+                local currentAmount = exports.ox_inventory:Search('count', mission.targetItem) or 0
+
+                SetTextScale(0.25, 0.25)
+                SetTextFont(4)
+                SetTextColour(255, 255, 255, 200)
+                SetTextCentre(true)
+                SetTextEntry("STRING")
+                AddTextComponentString(mission.targetItem .. ': ' .. currentAmount .. '/' .. mission.targetAmount)
+                DrawText(timerX + 0.005, timerY + 0.008)
+
+                -- Check si mission complete
+                if currentAmount >= mission.targetAmount then
+                    CompleteIllegalMission()
+                end
+            end
+
+            -- Mission avec coords a atteindre
+            if mission.targetCoords then
+                local playerCoords = GetEntityCoords(PlayerPedId())
+                local dist = #(playerCoords - mission.targetCoords)
+
+                if dist < Config.DrawDistance then
+                    if dist < Config.InteractDistance then
+                        Draw3DTextOnBone(PlayerPedId(), '[E] ' .. mission.label, 0.0, 0.0, 0.6)
+
+                        if not IsProgressBarActive() and IsControlJustPressed(0, 38) then
+                            DoIllegalMissionAction(mission)
+                        end
+                    else
+                        Draw3DText(mission.targetCoords + vector3(0, 0, 0.8), mission.label, 0.4, {148, 0, 211}, Config.Colors.white)
+                    end
+                end
+            end
+        else
+            Wait(500)
+        end
+    end
+end)
+
+function DoIllegalMissionAction(mission)
+    local playerPed = PlayerPedId()
+
+    -- Animation
+    RequestAnimDict('mp_common')
+    while not HasAnimDictLoaded('mp_common') do
+        Wait(100)
+    end
+
+    TaskPlayAnim(playerPed, 'mp_common', 'givetake1_a', 8.0, -8.0, -1, 49, 0, false, false, false)
+
+    StartProgressBar(mission.label, 8000, true)
+
+    local startTime = GetGameTimer()
+    while GetGameTimer() - startTime < 8000 do
+        if IsProgressBarCancelled() then
+            StopProgressBar()
+            ClearPedTasks(playerPed)
+            ShowNotification3D('Action annulee', 'warning', 2000)
+            return
+        end
+        Wait(100)
+    end
+
+    StopProgressBar()
+    ClearPedTasks(playerPed)
+
+    CompleteIllegalMission()
+end
+
+-- Reset mission illegale si on arrete le job
+local originalStopJob = StopJob
+function StopJob()
+    -- Annuler mission illegale si active
+    if illegalMission.active then
+        FailIllegalMission('Shift termine')
+    end
+    if illegalMission.pending then
+        illegalMission.pending = false
+        illegalMission.data = nil
+    end
+
+    originalStopJob()
+end

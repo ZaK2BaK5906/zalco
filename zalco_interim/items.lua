@@ -5,143 +5,274 @@
 
 return {
     -- =========================================================================
-    -- MINEUR - Minerais
+    -- MINEUR - Outils
     -- =========================================================================
-    ['charbon'] = {
-        label = 'Charbon',
-        weight = 500,
-        stack = true,
+    ['pickaxe'] = {
+        label = 'Pickaxe',
+        weight = 2000,
+        stack = false,
         close = true,
-        description = 'Morceau de charbon extrait de la mine',
-        client = {
-            image = 'charbon.png',
-        }
+        description = 'Une pioche pour extraire des minerais',
     },
 
-    ['minerai_fer'] = {
-        label = 'Minerai de Fer',
-        weight = 800,
+    -- =========================================================================
+    -- MINEUR - Minerais de base
+    -- =========================================================================
+    ['coal_ore'] = {
+        label = 'Coal Ore',
+        weight = 250,
         stack = true,
         close = true,
-        description = 'Minerai de fer brut, peut etre fondu',
-        client = {
-            image = 'minerai_fer.png',
-        }
+        description = 'Minerai de charbon extrait de la mine',
     },
 
-    ['minerai_or'] = {
-        label = 'Minerai d\'Or',
-        weight = 1000,
+    ['flint'] = {
+        label = 'Flint',
+        weight = 150,
         stack = true,
         close = true,
-        description = 'Precieux minerai d\'or brut',
-        client = {
-            image = 'minerai_or.png',
-        }
+        description = 'Pierre de silex',
     },
 
-    ['diamant_brut'] = {
-        label = 'Diamant Brut',
+    ['sulfur_chunk'] = {
+        label = 'Sulfur Chunk',
         weight = 200,
         stack = true,
         close = true,
-        description = 'Diamant non taille, tres precieux',
+        description = 'Morceau de soufre brut',
+    },
+
+    -- =========================================================================
+    -- MINEUR - Or
+    -- =========================================================================
+    ['gold_nugget'] = {
+        label = 'Gold Nugget',
+        weight = 250,
+        stack = true,
+        close = true,
+        description = 'Pepite d\'or precieuse',
+    },
+
+    ['gold_dust'] = {
+        label = 'Gold Dust',
+        weight = 150,
+        stack = true,
+        close = true,
+        description = 'Poussiere d\'or',
+    },
+
+    -- =========================================================================
+    -- MINEUR - Cristaux communs
+    -- =========================================================================
+    ['quartz_crystal'] = {
+        label = 'Quartz Crystal',
+        weight = 200,
+        stack = true,
+        close = true,
+        description = 'Cristal de quartz pur',
+    },
+
+    ['emerald_crystal'] = {
+        label = 'Emerald Crystal',
+        weight = 250,
+        stack = true,
+        close = true,
+        description = 'Cristal d\'emeraude brut',
+    },
+
+    ['beryl_chunk'] = {
+        label = 'Beryl Chunk',
+        weight = 200,
+        stack = true,
+        close = true,
+        description = 'Morceau de beryl',
+    },
+
+    ['green_garnet'] = {
+        label = 'Green Garnet',
+        weight = 150,
+        stack = true,
+        close = true,
+        description = 'Grenat vert rare',
+    },
+
+    -- =========================================================================
+    -- MINEUR - Pierres precieuses
+    -- =========================================================================
+    ['ruby_crystal'] = {
+        label = 'Ruby Crystal',
+        weight = 250,
+        stack = true,
+        close = true,
+        description = 'Cristal de rubis brut',
+    },
+
+    ['corundum_chunk'] = {
+        label = 'Corundum Chunk',
+        weight = 200,
+        stack = true,
+        close = true,
+        description = 'Morceau de corindon',
+    },
+
+    ['pink_sapphire'] = {
+        label = 'Pink Sapphire',
+        weight = 150,
+        stack = true,
+        close = true,
+        description = 'Saphir rose precieux',
+    },
+
+    -- =========================================================================
+    -- MINEUR - Amethyste et quartz
+    -- =========================================================================
+    ['amethyst_geode'] = {
+        label = 'Amethyst Geode',
+        weight = 250,
+        stack = true,
+        close = true,
+        description = 'Geode d\'amethyste',
+    },
+
+    ['purple_quartz'] = {
+        label = 'Purple Quartz',
+        weight = 200,
+        stack = true,
+        close = true,
+        description = 'Quartz violet',
+    },
+
+    ['clear_crystal'] = {
+        label = 'Clear Crystal',
+        weight = 150,
+        stack = true,
+        close = true,
+        description = 'Cristal pur transparent',
+    },
+
+    -- =========================================================================
+    -- MINEUR - Diamants
+    -- =========================================================================
+    ['diamond_crystal'] = {
+        label = 'Diamond Crystal',
+        weight = 250,
+        stack = true,
+        close = true,
+        description = 'Diamant brut de grande valeur',
+    },
+
+    ['graphite_chunk'] = {
+        label = 'Graphite Chunk',
+        weight = 200,
+        stack = true,
+        close = true,
+        description = 'Morceau de graphite',
+    },
+
+    ['blue_diamond'] = {
+        label = 'Blue Diamond',
+        weight = 150,
+        stack = true,
+        close = true,
+        description = 'Diamant bleu extremement rare',
+    },
+
+    -- =========================================================================
+    -- BUCHERON - Haches
+    -- =========================================================================
+    ['axe_rusty'] = {
+        label = 'Rusty Axe',
+        weight = 8000,
+        stack = false,
+        close = true,
+        description = 'Une vieille hache rouillee mais fonctionnelle',
         client = {
-            image = 'diamant_brut.png',
-        }
+            export = 'qs-lumberjack.toggleAxe'
+        },
+        server = {
+            export = 'qs-lumberjack.axe'
+        },
+    },
+
+    ['axe_iron'] = {
+        label = 'Iron-Edged Axe',
+        weight = 8000,
+        stack = false,
+        close = true,
+        description = 'Hache avec lame en fer de qualite',
+        client = {
+            export = 'qs-lumberjack.toggleAxe'
+        },
+        server = {
+            export = 'qs-lumberjack.axe'
+        },
+    },
+
+    ['axe_mythical'] = {
+        label = 'Mythical Axe',
+        weight = 8000,
+        stack = false,
+        close = true,
+        description = 'Hache legendaire de grande puissance',
+        client = {
+            export = 'qs-lumberjack.toggleAxe'
+        },
+        server = {
+            export = 'qs-lumberjack.axe'
+        },
     },
 
     -- =========================================================================
     -- BUCHERON - Bois
     -- =========================================================================
-    ['bois_brut'] = {
-        label = 'Bois Brut',
+    ['wood_log'] = {
+        label = 'Wood Log',
         weight = 1000,
         stack = true,
         close = true,
         description = 'Buche de bois fraichement coupee',
-        client = {
-            image = 'bois_brut.png',
-        }
-    },
-
-    ['ecorce'] = {
-        label = 'Ecorce',
-        weight = 200,
-        stack = true,
-        close = true,
-        description = 'Ecorce d\'arbre, utilisable en artisanat',
-        client = {
-            image = 'ecorce.png',
-        }
-    },
-
-    ['resine'] = {
-        label = 'Resine',
-        weight = 300,
-        stack = true,
-        close = true,
-        description = 'Resine d\'arbre naturelle',
-        client = {
-            image = 'resine.png',
-        }
     },
 
     -- =========================================================================
     -- BOUCHER - Viandes
     -- =========================================================================
-    ['viande_boeuf'] = {
-        label = 'Viande de Boeuf',
+    ['meat_beef'] = {
+        label = 'Beef Meat',
         weight = 500,
         stack = true,
         close = true,
-        description = 'Morceau de viande de boeuf crue',
-        client = {
-            image = 'viande_boeuf.png',
-        }
+        description = 'Viande de boeuf crue',
     },
 
-    ['viande_porc'] = {
-        label = 'Viande de Porc',
+    ['meat_pork'] = {
+        label = 'Pork Meat',
         weight = 450,
         stack = true,
         close = true,
-        description = 'Morceau de viande de porc crue',
-        client = {
-            image = 'viande_porc.png',
-        }
+        description = 'Viande de porc crue',
     },
 
-    ['viande_poulet'] = {
-        label = 'Viande de Poulet',
+    ['meat_chicken'] = {
+        label = 'Chicken Meat',
         weight = 300,
         stack = true,
         close = true,
-        description = 'Morceau de viande de poulet crue',
-        client = {
-            image = 'viande_poulet.png',
-        }
+        description = 'Viande de poulet crue',
     },
 
-    ['viande_agneau'] = {
-        label = 'Viande d\'Agneau',
+    ['meat_lamb'] = {
+        label = 'Lamb Meat',
         weight = 400,
         stack = true,
         close = true,
-        description = 'Morceau de viande d\'agneau crue',
-        client = {
-            image = 'viande_agneau.png',
-        }
+        description = 'Viande d\'agneau crue',
     },
 
-    ['cuir_brut'] = {
-        label = 'Cuir Brut',
+    ['raw_leather'] = {
+        label = 'Raw Leather',
         weight = 600,
         stack = true,
         close = true,
-        description = 'Peau d\'animal non traitee',
-        client = {
-            image = 'cuir_brut.png',
-        }
+        description = 'Cuir brut non traite',
     },
 }
