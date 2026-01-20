@@ -131,17 +131,25 @@ function SpawnAllNPCs()
     end
     spawnedNPCs = {}
 
-    -- Spawn NPC pour chaque job
+    -- Spawn NPCs pour chaque job (service, shop, sell)
     for jobId, jobData in pairs(Config.Jobs) do
-        if jobData.npc then
-            SpawnJobNPC(jobId, jobData.npc)
+        if jobData.npcService then
+            SpawnJobNPC(jobId .. '_service', jobData.npcService)
+        end
+        if jobData.npcShop then
+            SpawnJobNPC(jobId .. '_shop', jobData.npcShop)
+        end
+        if jobData.npcSell then
+            SpawnJobNPC(jobId .. '_sell', jobData.npcSell)
         end
     end
 
-    DebugPrint('Spawned ' .. #spawnedNPCs .. ' NPCs')
+    local count = 0
+    for _ in pairs(spawnedNPCs) do count = count + 1 end
+    DebugPrint('Spawned ' .. count .. ' NPCs')
 end
 
-function SpawnJobNPC(jobId, npcData)
+function SpawnJobNPC(npcId, npcData)
     local modelHash = GetHashKey(npcData.model)
 
     RequestModel(modelHash)
@@ -172,16 +180,17 @@ function SpawnJobNPC(jobId, npcData)
 
     SetModelAsNoLongerNeeded(modelHash)
 
-    spawnedNPCs[jobId] = ped
+    spawnedNPCs[npcId] = ped
 
-    DebugPrint('Spawned NPC for job: ' .. jobId)
+    DebugPrint('Spawned NPC: ' .. npcId)
 end
 
 -- =============================================================================
 -- NPC INTERACTION (ox_lib menu)
 -- =============================================================================
 
-function OpenNPCMenu(jobId)
+-- Menu NPC Service (prendre job, stats)
+function OpenServiceMenu(jobId)
     local jobData = Config.Jobs[jobId]
     if not jobData then return end
 
@@ -208,19 +217,6 @@ function OpenNPCMenu(jobId)
         },
     }
 
-    -- Ajouter options de shop si disponible
-    if jobData.npc and jobData.npc.shop and #jobData.npc.shop > 0 then
-        table.insert(menuOptions, {
-            title = 'Acheter equipement',
-            description = 'Acheter les outils necessaires',
-            icon = 'shopping-cart',
-            onSelect = function()
-                OpenShopMenu(jobId)
-            end
-        })
-    end
-
-    -- Option arreter si en service
     if isWorking and currentJob == jobId then
         table.insert(menuOptions, {
             title = 'Arreter le service',
@@ -233,21 +229,22 @@ function OpenNPCMenu(jobId)
     end
 
     lib.registerContext({
-        id = 'interim_npc_menu',
-        title = jobData.label,
+        id = 'interim_service_menu',
+        title = jobData.npcService.label or 'Service',
         options = menuOptions
     })
 
-    lib.showContext('interim_npc_menu')
+    lib.showContext('interim_service_menu')
 end
 
+-- Menu NPC Shop (acheter outils)
 function OpenShopMenu(jobId)
     local jobData = Config.Jobs[jobId]
-    if not jobData or not jobData.npc or not jobData.npc.shop then return end
+    if not jobData or not jobData.npcShop or not jobData.npcShop.items then return end
 
     local menuOptions = {}
 
-    for _, item in ipairs(jobData.npc.shop) do
+    for _, item in ipairs(jobData.npcShop.items) do
         table.insert(menuOptions, {
             title = item.label,
             description = 'Prix: $' .. item.price,
@@ -258,14 +255,36 @@ function OpenShopMenu(jobId)
         })
     end
 
+    if #menuOptions == 0 then
+        table.insert(menuOptions, {
+            title = 'Aucun article disponible',
+            icon = 'info-circle',
+            disabled = true
+        })
+    end
+
     lib.registerContext({
         id = 'interim_shop_menu',
-        title = 'Equipement - ' .. jobData.label,
-        menu = 'interim_npc_menu',
+        title = jobData.npcShop.label or 'Boutique',
         options = menuOptions
     })
 
     lib.showContext('interim_shop_menu')
+end
+
+-- Menu NPC Vente (vendre items)
+function OpenSellMenu(jobId)
+    local jobData = Config.Jobs[jobId]
+    if not jobData or not jobData.npcSell then return end
+
+    lib.callback('zalco_interim:sellItems', false, function(result)
+        if result and result.success then
+            currentShift.earnings = currentShift.earnings + result.total
+            ShowNotification3D('Vendu! +$' .. result.total, 'success', 3000)
+        elseif result and result.message then
+            ShowNotification3D(result.message, 'error', 3000)
+        end
+    end, jobId)
 end
 
 function OpenStatsMenu(jobId)
@@ -315,7 +334,7 @@ function OpenStatsMenu(jobId)
         lib.registerContext({
             id = 'interim_stats_menu',
             title = 'Statistiques - ' .. jobData.label,
-            menu = 'interim_npc_menu',
+            menu = 'interim_service_menu',
             options = menuOptions
         })
 
@@ -681,32 +700,82 @@ CreateThread(function()
         }
 
         for jobId, jobData in pairs(Config.Jobs) do
-            -- Interaction avec le NPC
-            if jobData.npc and spawnedNPCs[jobId] then
-                local npcPed = spawnedNPCs[jobId]
+            -- NPC Service (prendre job, stats)
+            if jobData.npcService and spawnedNPCs[jobId .. '_service'] then
+                local npcPed = spawnedNPCs[jobId .. '_service']
                 if DoesEntityExist(npcPed) then
                     local npcCoords = GetEntityCoords(npcPed)
                     local distToNPC = #(playerCoords - npcCoords)
 
                     if distToNPC < Config.DrawDistance then
                         sleep = 0
-
                         if distToNPC < Config.InteractDistance + 1.0 then
-                            -- Verifier si c'est le plus proche
                             if distToNPC < currentInteraction.distance then
                                 currentInteraction = {
                                     active = true,
-                                    type = 'npc',
+                                    type = 'npc_service',
                                     jobId = jobId,
-                                    pointIndex = nil,
                                     distance = distToNPC,
                                     coords = npcCoords,
-                                    label = jobData.label,
+                                    label = jobData.npcService.label,
                                 }
                             end
                         else
-                            -- Afficher label a distance (pas prioritaire)
-                            Draw3DText(npcCoords + vector3(0, 0, 1.2), jobData.label, 0.4, Config.Colors.background, Config.Colors.white)
+                            Draw3DText(npcCoords + vector3(0, 0, 1.2), jobData.npcService.label, 0.35, Config.Colors.primary, Config.Colors.white)
+                        end
+                    end
+                end
+            end
+
+            -- NPC Shop (acheter outils)
+            if jobData.npcShop and spawnedNPCs[jobId .. '_shop'] then
+                local npcPed = spawnedNPCs[jobId .. '_shop']
+                if DoesEntityExist(npcPed) then
+                    local npcCoords = GetEntityCoords(npcPed)
+                    local distToNPC = #(playerCoords - npcCoords)
+
+                    if distToNPC < Config.DrawDistance then
+                        sleep = 0
+                        if distToNPC < Config.InteractDistance + 1.0 then
+                            if distToNPC < currentInteraction.distance then
+                                currentInteraction = {
+                                    active = true,
+                                    type = 'npc_shop',
+                                    jobId = jobId,
+                                    distance = distToNPC,
+                                    coords = npcCoords,
+                                    label = jobData.npcShop.label,
+                                }
+                            end
+                        else
+                            Draw3DText(npcCoords + vector3(0, 0, 1.2), jobData.npcShop.label, 0.35, Config.Colors.warning, Config.Colors.white)
+                        end
+                    end
+                end
+            end
+
+            -- NPC Sell (vendre items)
+            if jobData.npcSell and spawnedNPCs[jobId .. '_sell'] then
+                local npcPed = spawnedNPCs[jobId .. '_sell']
+                if DoesEntityExist(npcPed) then
+                    local npcCoords = GetEntityCoords(npcPed)
+                    local distToNPC = #(playerCoords - npcCoords)
+
+                    if distToNPC < Config.DrawDistance then
+                        sleep = 0
+                        if distToNPC < Config.InteractDistance + 1.0 then
+                            if distToNPC < currentInteraction.distance then
+                                currentInteraction = {
+                                    active = true,
+                                    type = 'npc_sell',
+                                    jobId = jobId,
+                                    distance = distToNPC,
+                                    coords = npcCoords,
+                                    label = jobData.npcSell.label,
+                                }
+                            end
+                        else
+                            Draw3DText(npcCoords + vector3(0, 0, 1.2), jobData.npcSell.label, 0.35, Config.Colors.success, Config.Colors.white)
                         end
                     end
                 end
@@ -735,11 +804,22 @@ end)
 function DrawCurrentInteraction(playerPed)
     local inter = currentInteraction
 
-    if inter.type == 'npc' then
+    if inter.type == 'npc_service' then
         Draw3DText(inter.coords + vector3(0, 0, 1.0), '[E] ' .. inter.label, 0.35, Config.Colors.primary, Config.Colors.white)
-
         if IsControlJustPressed(0, 38) then
-            OpenNPCMenu(inter.jobId)
+            OpenServiceMenu(inter.jobId)
+        end
+
+    elseif inter.type == 'npc_shop' then
+        Draw3DText(inter.coords + vector3(0, 0, 1.0), '[E] ' .. inter.label, 0.35, Config.Colors.warning, Config.Colors.white)
+        if IsControlJustPressed(0, 38) then
+            OpenShopMenu(inter.jobId)
+        end
+
+    elseif inter.type == 'npc_sell' then
+        Draw3DText(inter.coords + vector3(0, 0, 1.0), '[E] ' .. inter.label, 0.35, Config.Colors.success, Config.Colors.white)
+        if IsControlJustPressed(0, 38) then
+            OpenSellMenu(inter.jobId)
         end
 
     elseif inter.type == 'farm' then

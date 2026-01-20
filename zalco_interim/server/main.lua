@@ -288,7 +288,7 @@ AddEventHandler('zalco_interim:buyItem', function(jobId, itemName, price)
 
     -- Verifier que le job existe et a un shop
     local jobData = Config.Jobs[jobId]
-    if not jobData or not jobData.npc or not jobData.npc.shop then
+    if not jobData or not jobData.npcShop or not jobData.npcShop.items then
         TriggerClientEvent('zalco_interim:notify', source, 'Erreur configuration shop', 'error')
         return
     end
@@ -296,7 +296,7 @@ AddEventHandler('zalco_interim:buyItem', function(jobId, itemName, price)
     -- Verifier que l'item est dans le shop (securite anti-cheat)
     local validItem = false
     local actualPrice = 0
-    for _, shopItem in ipairs(jobData.npc.shop) do
+    for _, shopItem in ipairs(jobData.npcShop.items) do
         if shopItem.item == itemName then
             validItem = true
             actualPrice = shopItem.price
@@ -346,8 +346,8 @@ lib.callback.register('zalco_interim:sellItems', function(source, jobId)
     if not xPlayer then return {success = false, message = 'Erreur joueur'} end
 
     local jobData = Config.Jobs[jobId]
-    if not jobData or not jobData.sellPoint then
-        return {success = false, message = 'Job invalide'}
+    if not jobData or not jobData.npcSell or not jobData.npcSell.prices then
+        return {success = false, message = 'Pas de point de vente pour ce job'}
     end
 
     local identifier = xPlayer.identifier
@@ -356,7 +356,7 @@ lib.callback.register('zalco_interim:sellItems', function(source, jobId)
     local total = 0
     local soldItems = {}
 
-    for itemName, price in pairs(jobData.sellPoint.prices) do
+    for itemName, price in pairs(jobData.npcSell.prices) do
         local itemCount = exports.ox_inventory:GetItemCount(source, itemName)
 
         if itemCount and itemCount > 0 then
