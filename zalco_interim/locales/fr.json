@@ -1,0 +1,84 @@
+{
+    "jobs": {
+        "mineur": {
+            "name": "Mineur",
+            "description": "Extraire des minerais dans la mine"
+        },
+        "bucheron": {
+            "name": "Bucheron",
+            "description": "Abattre des arbres en foret"
+        },
+        "boucher": {
+            "name": "Boucher",
+            "description": "Depecer des animaux a l'abattoir"
+        },
+        "livreur_pizza": {
+            "name": "Livreur Pizza",
+            "description": "Livrer des pizzas en scooter"
+        },
+        "eboueur": {
+            "name": "Eboueur",
+            "description": "Ramasser les poubelles de la ville"
+        },
+        "facteur": {
+            "name": "Facteur",
+            "description": "Distribuer le courrier et colis"
+        },
+        "agent_entretien": {
+            "name": "Agent d'entretien",
+            "description": "Nettoyer les lieux publics"
+        },
+        "jardinier": {
+            "name": "Jardinier Municipal",
+            "description": "Entretenir les espaces verts"
+        }
+    },
+    "ui": {
+        "shift_started": "Shift %s commence!",
+        "shift_ended": "Shift termine! +$%d (%d taches)",
+        "level_up": "Niveau superieur! Tu es maintenant %s",
+        "inventory_full": "Inventaire plein!",
+        "nothing_to_sell": "Rien a vendre!",
+        "sold_items": "Vendu! +$%d",
+        "delivery_complete": "Livraison complete! +$%d",
+        "bonus_speed": "Bonus rapidite! +$%d",
+        "action_cancelled": "Action annulee",
+        "press_e": "[E] %s",
+        "press_x_cancel": "[X] Annuler",
+        "bags_collected": "+%d sac(s) - Total: %d",
+        "deposit_complete": "Depot termine! +$%d (%d sacs)",
+        "all_deliveries_done": "Toutes les livraisons terminees!",
+        "stop_job_hint": "/stopjob pour terminer",
+        "not_working": "Tu n'es pas en shift!",
+        "vehicle_spawned": "Vehicule de travail spawne!"
+    },
+    "stats": {
+        "shift": "SHIFT",
+        "earnings": "Gains",
+        "tasks": "Taches",
+        "time": "Temps",
+        "level": "Niveau",
+        "xp": "XP"
+    },
+    "levels": {
+        "0": "Debutant",
+        "1": "Apprenti",
+        "2": "Confirme",
+        "3": "Expert",
+        "4": "Maitre"
+    },
+    "items": {
+        "charbon": "Charbon",
+        "minerai_fer": "Minerai de Fer",
+        "minerai_or": "Minerai d'Or",
+        "diamant_brut": "Diamant Brut",
+        "bois_brut": "Bois Brut",
+        "ecorce": "Ecorce",
+        "resine": "Resine",
+        "viande_boeuf": "Viande de Boeuf",
+        "viande_porc": "Viande de Porc",
+        "viande_poulet": "Viande de Poulet",
+        "viande_agneau": "Viande d'Agneau",
+        "cuir_brut": "Cuir Brut"
+    }
+}
