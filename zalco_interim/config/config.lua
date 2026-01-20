@@ -6,8 +6,21 @@ Config = {}
 
 Config.Debug = true -- Mettre false en production
 Config.UseOxTarget = true -- Utiliser ox_target ou touches clavier
-Config.DrawDistance = 15.0 -- Distance d'affichage 3D UI
+Config.DrawDistance = 10.0 -- Distance d'affichage 3D UI (reduit pour eviter overlap)
 Config.InteractDistance = 2.5 -- Distance d'interaction
+
+-- Cooldown des points de farm (en ms)
+Config.FarmCooldown = 120000 -- 2 minutes
+
+-- Configuration UI 3D (eviter chevauchements)
+Config.UI = {
+    -- Offsets verticaux pour stacking
+    promptOffset = 0.65,        -- Offset Z pour prompts d'interaction
+    progressBarOffset = 0.35,   -- Offset Z pour progress bar
+    cooldownOffset = 0.55,      -- Offset Z pour affichage cooldown
+    -- Limites
+    maxVisiblePrompts = 1,      -- Un seul prompt visible a la fois
+}
 
 -- Couleurs 3D UI
 Config.Colors = {
@@ -63,6 +76,16 @@ Config.Jobs['mineur'] = {
     requiredItem = 'pickaxe', -- Outil requis pour miner
 
     startPoint = vector3(2959.54, 2774.36, 39.31),
+
+    -- PNJ pour prendre service et acheter outils
+    npc = {
+        model = 's_m_y_construct_01',
+        coords = vector4(2959.54, 2774.36, 39.31, 180.0),
+        scenario = 'WORLD_HUMAN_CLIPBOARD',
+        shop = {
+            {item = 'pickaxe', price = 500, label = 'Pickaxe'},
+        }
+    },
 
     -- Points de farm avec les nouveaux items
     farmPoints = {
@@ -186,6 +209,18 @@ Config.Jobs['bucheron'] = {
 
     startPoint = vector3(-537.09, 5252.53, 74.17),
 
+    -- PNJ pour prendre service et acheter outils
+    npc = {
+        model = 's_m_y_construct_02',
+        coords = vector4(-537.09, 5252.53, 74.17, 90.0),
+        scenario = 'WORLD_HUMAN_CLIPBOARD',
+        shop = {
+            {item = 'axe_rusty', price = 250, label = 'Rusty Axe'},
+            {item = 'axe_iron', price = 750, label = 'Iron-Edged Axe'},
+            {item = 'axe_mythical', price = 2500, label = 'Mythical Axe'},
+        }
+    },
+
     farmPoints = {
         {coords = vector3(-550.23, 5245.67, 74.17), label = 'Arbre a abattre', item = 'wood_log', minAmount = 2, maxAmount = 4, time = 12000},
         {coords = vector3(-525.45, 5260.89, 74.17), label = 'Arbre a abattre', item = 'wood_log', minAmount = 2, maxAmount = 4, time = 12000},
@@ -257,6 +292,14 @@ Config.Jobs['boucher'] = {
     xpPerAction = 3,
 
     startPoint = vector3(967.12, -2150.45, 30.51),
+
+    -- PNJ pour prendre service
+    npc = {
+        model = 's_m_m_cntrybar_01',
+        coords = vector4(967.12, -2150.45, 30.51, 270.0),
+        scenario = 'WORLD_HUMAN_CLIPBOARD',
+        shop = {} -- Pas d'outils speciaux
+    },
 
     farmPoints = {
         {coords = vector3(975.34, -2145.67, 30.51), label = 'Depecer boeuf', item = 'meat_beef', minAmount = 3, maxAmount = 6, time = 15000},
@@ -332,6 +375,14 @@ Config.Jobs['livreur_pizza'] = {
 
     startPoint = vector3(540.12, 100.45, 96.53),
 
+    -- PNJ pour prendre service
+    npc = {
+        model = 's_m_y_pizza_01',
+        coords = vector4(540.12, 100.45, 96.53, 45.0),
+        scenario = 'WORLD_HUMAN_STAND_IMPATIENT',
+        shop = {}
+    },
+
     deliveryPickup = {
         coords = vector3(540.12, 100.45, 96.53),
         label = 'Recuperer commandes',
@@ -400,6 +451,14 @@ Config.Jobs['eboueur'] = {
 
     startPoint = vector3(-322.45, -1545.67, 27.53),
 
+    -- PNJ pour prendre service
+    npc = {
+        model = 's_m_y_garbage',
+        coords = vector4(-322.45, -1545.67, 27.53, 180.0),
+        scenario = 'WORLD_HUMAN_CLIPBOARD',
+        shop = {}
+    },
+
     collectPoints = {
         {coords = vector3(-245.34, -1510.67, 30.53), label = 'Ramasser poubelle', time = 4000},
         {coords = vector3(-198.45, -1485.89, 31.22), label = 'Ramasser poubelle', time = 4000},
@@ -465,6 +524,14 @@ Config.Jobs['facteur'] = {
     xpPerAction = 2,
 
     startPoint = vector3(105.45, -1568.67, 29.60),
+
+    -- PNJ pour prendre service
+    npc = {
+        model = 's_m_m_postal_02',
+        coords = vector4(105.45, -1568.67, 29.60, 0.0),
+        scenario = 'WORLD_HUMAN_CLIPBOARD',
+        shop = {}
+    },
 
     deliveryPickup = {
         coords = vector3(105.45, -1568.67, 29.60),
@@ -533,6 +600,14 @@ Config.Jobs['agent_entretien'] = {
 
     startPoint = vector3(-1395.67, -480.34, 72.04),
 
+    -- PNJ pour prendre service
+    npc = {
+        model = 's_m_y_clown_01',
+        coords = vector4(-1395.67, -480.34, 72.04, 90.0),
+        scenario = 'WORLD_HUMAN_CLIPBOARD',
+        shop = {}
+    },
+
     cleanPoints = {
         {coords = vector3(-1380.34, -475.67, 72.04), label = 'Nettoyer sol', time = 6000, reward = 35},
         {coords = vector3(-1405.45, -490.89, 72.04), label = 'Nettoyer vitres', time = 8000, reward = 45},
@@ -594,6 +669,14 @@ Config.Jobs['jardinier'] = {
     xpPerAction = 2,
 
     startPoint = vector3(-1222.45, -1475.67, 4.36),
+
+    -- PNJ pour prendre service
+    npc = {
+        model = 's_m_y_construct_01',
+        coords = vector4(-1222.45, -1475.67, 4.36, 270.0),
+        scenario = 'WORLD_HUMAN_GARDENER_PLANT',
+        shop = {}
+    },
 
     gardenPoints = {
         {coords = vector3(-1235.34, -1465.67, 4.36), label = 'Tondre pelouse', time = 10000, reward = 55, type = 'tondre'},

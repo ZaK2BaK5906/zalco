@@ -41,6 +41,21 @@ local illegalMission = {
     lastMissionTime = 0,
 }
 
+-- NPCs spawnes
+local spawnedNPCs = {}
+
+-- Cooldowns des points de farm (par job et index)
+local farmCooldowns = {}
+
+-- UI Priority system (eviter chevauchements)
+local currentInteraction = {
+    active = false,
+    type = nil, -- 'npc', 'farm', 'sell', 'delivery', etc
+    jobId = nil,
+    pointIndex = nil,
+    distance = 999,
+}
+
 -- Debug
 local function DebugPrint(msg)
     if Config.Debug then
@@ -57,6 +72,9 @@ CreateThread(function()
         Wait(100)
     end
     PlayerData = ESX.GetPlayerData()
+
+    -- Spawn tous les NPCs
+    SpawnAllNPCs()
 
     -- Creer les blips pour tous les jobs
     CreateJobBlips()
@@ -101,6 +119,232 @@ function CreateJobBlips()
 end
 
 -- =============================================================================
+-- NPC SPAWNING
+-- =============================================================================
+
+function SpawnAllNPCs()
+    -- Supprimer anciens NPCs
+    for _, ped in pairs(spawnedNPCs) do
+        if DoesEntityExist(ped) then
+            DeleteEntity(ped)
+        end
+    end
+    spawnedNPCs = {}
+
+    -- Spawn NPC pour chaque job
+    for jobId, jobData in pairs(Config.Jobs) do
+        if jobData.npc then
+            SpawnJobNPC(jobId, jobData.npc)
+        end
+    end
+
+    DebugPrint('Spawned ' .. #spawnedNPCs .. ' NPCs')
+end
+
+function SpawnJobNPC(jobId, npcData)
+    local modelHash = GetHashKey(npcData.model)
+
+    RequestModel(modelHash)
+    local timeout = 0
+    while not HasModelLoaded(modelHash) and timeout < 50 do
+        Wait(100)
+        timeout = timeout + 1
+    end
+
+    if not HasModelLoaded(modelHash) then
+        DebugPrint('Failed to load NPC model: ' .. npcData.model)
+        return
+    end
+
+    local ped = CreatePed(4, modelHash, npcData.coords.x, npcData.coords.y, npcData.coords.z - 1.0, npcData.coords.w, false, true)
+
+    SetEntityAsMissionEntity(ped, true, true)
+    SetBlockingOfNonTemporaryEvents(ped, true)
+    SetPedDiesWhenInjured(ped, false)
+    SetPedCanPlayAmbientAnims(ped, true)
+    SetPedCanRagdollFromPlayerImpact(ped, false)
+    SetEntityInvincible(ped, true)
+    FreezeEntityPosition(ped, true)
+
+    if npcData.scenario then
+        TaskStartScenarioInPlace(ped, npcData.scenario, 0, true)
+    end
+
+    SetModelAsNoLongerNeeded(modelHash)
+
+    spawnedNPCs[jobId] = ped
+
+    DebugPrint('Spawned NPC for job: ' .. jobId)
+end
+
+-- =============================================================================
+-- NPC INTERACTION (ox_lib menu)
+-- =============================================================================
+
+function OpenNPCMenu(jobId)
+    local jobData = Config.Jobs[jobId]
+    if not jobData then return end
+
+    local menuOptions = {
+        {
+            title = 'Commencer le service',
+            description = 'Commencer un shift de ' .. jobData.label,
+            icon = 'briefcase',
+            onSelect = function()
+                if not isWorking then
+                    StartJob(jobId)
+                else
+                    ShowNotification3D('Tu es deja en service!', 'error', 3000)
+                end
+            end
+        },
+        {
+            title = 'Voir mes stats',
+            description = 'Consulter tes statistiques',
+            icon = 'chart-bar',
+            onSelect = function()
+                OpenStatsMenu(jobId)
+            end
+        },
+    }
+
+    -- Ajouter options de shop si disponible
+    if jobData.npc and jobData.npc.shop and #jobData.npc.shop > 0 then
+        table.insert(menuOptions, {
+            title = 'Acheter equipement',
+            description = 'Acheter les outils necessaires',
+            icon = 'shopping-cart',
+            onSelect = function()
+                OpenShopMenu(jobId)
+            end
+        })
+    end
+
+    -- Option arreter si en service
+    if isWorking and currentJob == jobId then
+        table.insert(menuOptions, {
+            title = 'Arreter le service',
+            description = 'Terminer ton shift actuel',
+            icon = 'stop',
+            onSelect = function()
+                StopJob()
+            end
+        })
+    end
+
+    lib.registerContext({
+        id = 'interim_npc_menu',
+        title = jobData.label,
+        options = menuOptions
+    })
+
+    lib.showContext('interim_npc_menu')
+end
+
+function OpenShopMenu(jobId)
+    local jobData = Config.Jobs[jobId]
+    if not jobData or not jobData.npc or not jobData.npc.shop then return end
+
+    local menuOptions = {}
+
+    for _, item in ipairs(jobData.npc.shop) do
+        table.insert(menuOptions, {
+            title = item.label,
+            description = 'Prix: $' .. item.price,
+            icon = 'box',
+            onSelect = function()
+                TriggerServerEvent('zalco_interim:buyItem', jobId, item.item, item.price)
+            end
+        })
+    end
+
+    lib.registerContext({
+        id = 'interim_shop_menu',
+        title = 'Equipement - ' .. jobData.label,
+        menu = 'interim_npc_menu',
+        options = menuOptions
+    })
+
+    lib.showContext('interim_shop_menu')
+end
+
+function OpenStatsMenu(jobId)
+    lib.callback('zalco_interim:getStats', false, function(stats)
+        if not stats then
+            ShowNotification3D('Erreur chargement stats', 'error', 3000)
+            return
+        end
+
+        local jobData = Config.Jobs[jobId]
+        local jobStats = stats.jobs[jobId]
+
+        local menuOptions = {
+            {
+                title = 'Stats Globales',
+                description = string.format('Shifts: %d | Taches: %d | Gains: $%d',
+                    stats.total_shifts, stats.total_tasks, stats.total_earnings),
+                icon = 'globe',
+                disabled = true
+            },
+        }
+
+        if jobStats then
+            table.insert(menuOptions, {
+                title = 'Niveau: ' .. jobStats.levelName,
+                description = string.format('XP: %d/%d | Bonus: x%.2f',
+                    jobStats.xp, jobStats.nextLevelXp, jobStats.bonus),
+                icon = 'star',
+                disabled = true
+            })
+            table.insert(menuOptions, {
+                title = 'Stats ' .. jobData.label,
+                description = string.format('Shifts: %d | Taches: %d | Gains: $%d',
+                    jobStats.shifts, jobStats.tasks, jobStats.earnings),
+                icon = 'chart-line',
+                disabled = true
+            })
+        else
+            table.insert(menuOptions, {
+                title = 'Aucune stat pour ce job',
+                description = 'Commence a travailler pour avoir des stats!',
+                icon = 'info-circle',
+                disabled = true
+            })
+        end
+
+        lib.registerContext({
+            id = 'interim_stats_menu',
+            title = 'Statistiques - ' .. jobData.label,
+            menu = 'interim_npc_menu',
+            options = menuOptions
+        })
+
+        lib.showContext('interim_stats_menu')
+    end)
+end
+
+-- =============================================================================
+-- COOLDOWN SYSTEM
+-- =============================================================================
+
+function IsPointOnCooldown(jobId, pointIndex)
+    local key = jobId .. '_' .. pointIndex
+    local cooldownEnd = farmCooldowns[key]
+
+    if cooldownEnd and GetGameTimer() < cooldownEnd then
+        return true, math.ceil((cooldownEnd - GetGameTimer()) / 1000)
+    end
+
+    return false, 0
+end
+
+function SetPointCooldown(jobId, pointIndex)
+    local key = jobId .. '_' .. pointIndex
+    farmCooldowns[key] = GetGameTimer() + Config.FarmCooldown
+    DebugPrint('Cooldown set for ' .. key .. ' (' .. (Config.FarmCooldown / 1000) .. 's)')
+end
+
+-- =============================================================================
 -- 3D TEXT UI - ATTACHE AUX BONES
 -- =============================================================================
 
@@ -142,7 +386,7 @@ function Draw3DText(coords, text, scale, backgroundColor, textColor)
     end
 end
 
-function Draw3DTextOnBone(ped, text, offsetX, offsetY, offsetZ)
+function Draw3DTextOnBone(ped, text, offsetX, offsetY, offsetZ, isDisabled)
     local boneCoords = GetPedBoneCoords(ped, 31086, 0.0, 0.0, 0.0) -- 31086 = HEAD
     local textCoords = vector3(boneCoords.x + (offsetX or 0.0), boneCoords.y + (offsetY or 0.0), boneCoords.z + (offsetZ or 0.5))
 
@@ -162,21 +406,26 @@ function Draw3DTextOnBone(ped, text, offsetX, offsetY, offsetZ)
         local textWidth = string.len(text) * 0.0045 * scaleMultiplier
         local boxHeight = 0.022 * scaleMultiplier + 0.008
 
+        -- Couleurs selon etat
+        local accentColor = isDisabled and {100, 100, 100} or Config.Colors.primary
+        local bgAlpha = isDisabled and 180 or 220
+        local textAlpha = isDisabled and 150 or 255
+
         -- Background box
-        DrawRect(screenX, screenY, textWidth + 0.02, boxHeight, 20, 20, 30, 220)
+        DrawRect(screenX, screenY, textWidth + 0.02, boxHeight, 20, 20, 30, bgAlpha)
 
         -- Accent bar (left side)
         DrawRect(screenX - (textWidth + 0.02) / 2 + 0.003, screenY, 0.006, boxHeight,
-            Config.Colors.primary[1], Config.Colors.primary[2], Config.Colors.primary[3], 255)
+            accentColor[1], accentColor[2], accentColor[3], 255)
 
         -- Border top
         DrawRect(screenX, screenY - boxHeight / 2, textWidth + 0.02, 0.002,
-            Config.Colors.primary[1], Config.Colors.primary[2], Config.Colors.primary[3], 200)
+            accentColor[1], accentColor[2], accentColor[3], 200)
 
         -- Text
         SetTextScale(scaleMultiplier, scaleMultiplier)
         SetTextFont(4)
-        SetTextColour(255, 255, 255, 255)
+        SetTextColour(255, 255, 255, textAlpha)
         SetTextDropshadow(0, 0, 0, 0, 255)
         SetTextCentre(true)
         SetTextEntry("STRING")
@@ -422,29 +671,57 @@ CreateThread(function()
         local playerPed = PlayerPedId()
         local playerCoords = GetEntityCoords(playerPed)
 
+        -- Reset interaction priority chaque frame
+        currentInteraction = {
+            active = false,
+            type = nil,
+            jobId = nil,
+            pointIndex = nil,
+            distance = 999,
+        }
+
         for jobId, jobData in pairs(Config.Jobs) do
-            local distToStart = #(playerCoords - jobData.startPoint)
+            -- Interaction avec le NPC
+            if jobData.npc and spawnedNPCs[jobId] then
+                local npcPed = spawnedNPCs[jobId]
+                if DoesEntityExist(npcPed) then
+                    local npcCoords = GetEntityCoords(npcPed)
+                    local distToNPC = #(playerCoords - npcCoords)
 
-            -- Affichage point de depart
-            if distToStart < Config.DrawDistance then
-                sleep = 0
+                    if distToNPC < Config.DrawDistance then
+                        sleep = 0
 
-                if distToStart < Config.InteractDistance then
-                    Draw3DTextOnBone(playerPed, '[E] ' .. jobData.label, 0.0, 0.0, 0.6)
-
-                    if not isWorking and IsControlJustPressed(0, 38) then -- E key
-                        StartJob(jobId)
+                        if distToNPC < Config.InteractDistance + 1.0 then
+                            -- Verifier si c'est le plus proche
+                            if distToNPC < currentInteraction.distance then
+                                currentInteraction = {
+                                    active = true,
+                                    type = 'npc',
+                                    jobId = jobId,
+                                    pointIndex = nil,
+                                    distance = distToNPC,
+                                    coords = npcCoords,
+                                    label = jobData.label,
+                                }
+                            end
+                        else
+                            -- Afficher label a distance (pas prioritaire)
+                            Draw3DText(npcCoords + vector3(0, 0, 1.2), jobData.label, 0.4, Config.Colors.background, Config.Colors.white)
+                        end
                     end
-                else
-                    Draw3DText(jobData.startPoint + vector3(0, 0, 1.0), jobData.label, 0.4, Config.Colors.background, Config.Colors.white)
                 end
             end
 
-            -- Si on travaille ce job, afficher les points de farm/livraison/etc
+            -- Si on travaille ce job, scanner les points
             if isWorking and currentJob == jobId then
                 sleep = 0
-                DrawJobPoints(jobId, jobData, playerPed, playerCoords)
+                ScanJobPoints(jobId, jobData, playerPed, playerCoords)
             end
+        end
+
+        -- Afficher l'interaction prioritaire (une seule)
+        if currentInteraction.active and not IsProgressBarActive() then
+            DrawCurrentInteraction(playerPed)
         end
 
         Wait(sleep)
@@ -452,24 +729,118 @@ CreateThread(function()
 end)
 
 -- =============================================================================
--- JOB POINTS DRAWING & INTERACTION
+-- DRAW CURRENT INTERACTION (unique)
 -- =============================================================================
 
-function DrawJobPoints(jobId, jobData, playerPed, playerCoords)
+function DrawCurrentInteraction(playerPed)
+    local inter = currentInteraction
+
+    if inter.type == 'npc' then
+        Draw3DText(inter.coords + vector3(0, 0, 1.0), '[E] ' .. inter.label, 0.35, Config.Colors.primary, Config.Colors.white)
+
+        if IsControlJustPressed(0, 38) then
+            OpenNPCMenu(inter.jobId)
+        end
+
+    elseif inter.type == 'farm' then
+        local onCooldown, remainingTime = IsPointOnCooldown(inter.jobId, inter.pointIndex)
+
+        if onCooldown then
+            Draw3DTextOnBone(playerPed, inter.label .. ' (' .. remainingTime .. 's)', 0.0, 0.0, Config.UI and Config.UI.cooldownOffset or 0.55, true)
+        else
+            Draw3DTextOnBone(playerPed, '[E] ' .. inter.label, 0.0, 0.0, Config.UI and Config.UI.promptOffset or 0.65)
+
+            if IsControlJustPressed(0, 38) then
+                DoFarmAction(inter.jobId, inter.jobData, inter.point, inter.pointIndex)
+            end
+        end
+
+    elseif inter.type == 'sell' then
+        Draw3DTextOnBone(playerPed, '[E] ' .. inter.label, 0.0, 0.0, Config.UI and Config.UI.promptOffset or 0.65)
+
+        if IsControlJustPressed(0, 38) then
+            SellItems(inter.jobId, inter.jobData)
+        end
+
+    elseif inter.type == 'delivery_pickup' then
+        Draw3DTextOnBone(playerPed, '[E] ' .. inter.label, 0.0, 0.0, Config.UI and Config.UI.promptOffset or 0.65)
+
+        if IsControlJustPressed(0, 38) and #currentShift.deliveries == 0 then
+            PickupDeliveries(inter.jobId, inter.jobData)
+        end
+
+    elseif inter.type == 'delivery' then
+        Draw3DTextOnBone(playerPed, '[E] ' .. inter.label, 0.0, 0.0, Config.UI and Config.UI.promptOffset or 0.65)
+
+        if IsControlJustPressed(0, 38) then
+            DoDelivery(inter.jobId, inter.jobData, inter.delivery, inter.deliveryIndex)
+        end
+
+    elseif inter.type == 'collect' then
+        Draw3DTextOnBone(playerPed, '[E] ' .. inter.label, 0.0, 0.0, Config.UI and Config.UI.promptOffset or 0.65)
+
+        if IsControlJustPressed(0, 38) then
+            DoCollectTrash(inter.jobId, inter.jobData, inter.point, inter.pointIndex)
+        end
+
+    elseif inter.type == 'deposit' then
+        local bagsText = currentShift.collectedBags .. ' sacs'
+        Draw3DTextOnBone(playerPed, '[E] Deposer (' .. bagsText .. ')', 0.0, 0.0, Config.UI and Config.UI.promptOffset or 0.65)
+
+        if IsControlJustPressed(0, 38) and currentShift.collectedBags > 0 then
+            DepositTrash(inter.jobId, inter.jobData)
+        end
+
+    elseif inter.type == 'clean' then
+        Draw3DTextOnBone(playerPed, '[E] ' .. inter.label, 0.0, 0.0, Config.UI and Config.UI.promptOffset or 0.65)
+
+        if IsControlJustPressed(0, 38) then
+            DoCleanAction(inter.jobId, inter.jobData, inter.point, inter.pointIndex)
+        end
+
+    elseif inter.type == 'garden' then
+        Draw3DTextOnBone(playerPed, '[E] ' .. inter.label, 0.0, 0.0, Config.UI and Config.UI.promptOffset or 0.65)
+
+        if IsControlJustPressed(0, 38) then
+            DoGardenAction(inter.jobId, inter.jobData, inter.point, inter.pointIndex)
+        end
+    end
+end
+
+-- =============================================================================
+-- JOB POINTS SCANNING (pour priority system)
+-- =============================================================================
+
+function ScanJobPoints(jobId, jobData, playerPed, playerCoords)
     -- Jobs de farm (mineur, bucheron, boucher)
     if jobData.farmPoints then
         for i, point in ipairs(jobData.farmPoints) do
             local dist = #(playerCoords - point.coords)
 
             if dist < Config.DrawDistance then
-                if dist < Config.InteractDistance then
-                    Draw3DTextOnBone(playerPed, '[E] ' .. point.label, 0.0, 0.0, 0.6)
+                local onCooldown, remainingTime = IsPointOnCooldown(jobId, i)
 
-                    if not IsProgressBarActive() and IsControlJustPressed(0, 38) then
-                        DoFarmAction(jobId, jobData, point, i)
+                if dist < Config.InteractDistance then
+                    -- Enregistrer si plus proche
+                    if dist < currentInteraction.distance then
+                        currentInteraction = {
+                            active = true,
+                            type = 'farm',
+                            jobId = jobId,
+                            jobData = jobData,
+                            point = point,
+                            pointIndex = i,
+                            distance = dist,
+                            label = point.label,
+                        }
                     end
                 else
-                    Draw3DText(point.coords + vector3(0, 0, 0.8), point.label, 0.35, Config.Colors.background, Config.Colors.white)
+                    -- Afficher a distance (grise si cooldown)
+                    if onCooldown then
+                        Draw3DText(point.coords + vector3(0, 0, 0.8), point.label .. ' (' .. remainingTime .. 's)', 0.3, {60, 60, 70}, {120, 120, 120})
+                    else
+                        Draw3DText(point.coords + vector3(0, 0, 0.8), point.label, 0.3, Config.Colors.background, Config.Colors.white)
+                    end
                 end
             end
         end
@@ -479,13 +850,18 @@ function DrawJobPoints(jobId, jobData, playerPed, playerCoords)
             local dist = #(playerCoords - jobData.sellPoint.coords)
             if dist < Config.DrawDistance then
                 if dist < Config.InteractDistance then
-                    Draw3DTextOnBone(playerPed, '[E] ' .. jobData.sellPoint.label, 0.0, 0.0, 0.6)
-
-                    if not IsProgressBarActive() and IsControlJustPressed(0, 38) then
-                        SellItems(jobId, jobData)
+                    if dist < currentInteraction.distance then
+                        currentInteraction = {
+                            active = true,
+                            type = 'sell',
+                            jobId = jobId,
+                            jobData = jobData,
+                            distance = dist,
+                            label = jobData.sellPoint.label,
+                        }
                     end
                 else
-                    Draw3DText(jobData.sellPoint.coords + vector3(0, 0, 0.8), jobData.sellPoint.label, 0.35, {46, 204, 113}, Config.Colors.white)
+                    Draw3DText(jobData.sellPoint.coords + vector3(0, 0, 0.8), jobData.sellPoint.label, 0.3, Config.Colors.success, Config.Colors.white)
                 end
             end
         end
@@ -494,17 +870,22 @@ function DrawJobPoints(jobId, jobData, playerPed, playerCoords)
     -- Jobs de livraison (pizza, facteur)
     if jobData.deliveryPoints then
         -- Point de recuperation
-        if jobData.deliveryPickup then
+        if jobData.deliveryPickup and #currentShift.deliveries == 0 then
             local dist = #(playerCoords - jobData.deliveryPickup.coords)
             if dist < Config.DrawDistance then
                 if dist < Config.InteractDistance then
-                    Draw3DTextOnBone(playerPed, '[E] ' .. jobData.deliveryPickup.label, 0.0, 0.0, 0.6)
-
-                    if not IsProgressBarActive() and IsControlJustPressed(0, 38) and #currentShift.deliveries == 0 then
-                        PickupDeliveries(jobId, jobData)
+                    if dist < currentInteraction.distance then
+                        currentInteraction = {
+                            active = true,
+                            type = 'delivery_pickup',
+                            jobId = jobId,
+                            jobData = jobData,
+                            distance = dist,
+                            label = jobData.deliveryPickup.label,
+                        }
                     end
                 else
-                    Draw3DText(jobData.deliveryPickup.coords + vector3(0, 0, 0.8), jobData.deliveryPickup.label, 0.35, Config.Colors.background, Config.Colors.white)
+                    Draw3DText(jobData.deliveryPickup.coords + vector3(0, 0, 0.8), jobData.deliveryPickup.label, 0.3, Config.Colors.background, Config.Colors.white)
                 end
             end
         end
@@ -515,13 +896,20 @@ function DrawJobPoints(jobId, jobData, playerPed, playerCoords)
                 local dist = #(playerCoords - delivery.coords)
                 if dist < Config.DrawDistance then
                     if dist < Config.InteractDistance then
-                        Draw3DTextOnBone(playerPed, '[E] ' .. delivery.label, 0.0, 0.0, 0.6)
-
-                        if not IsProgressBarActive() and IsControlJustPressed(0, 38) then
-                            DoDelivery(jobId, jobData, delivery, i)
+                        if dist < currentInteraction.distance then
+                            currentInteraction = {
+                                active = true,
+                                type = 'delivery',
+                                jobId = jobId,
+                                jobData = jobData,
+                                delivery = delivery,
+                                deliveryIndex = i,
+                                distance = dist,
+                                label = delivery.label,
+                            }
                         end
                     else
-                        Draw3DText(delivery.coords + vector3(0, 0, 0.8), 'Livraison #' .. i, 0.35, {255, 183, 77}, Config.Colors.white)
+                        Draw3DText(delivery.coords + vector3(0, 0, 0.8), 'Livraison #' .. i, 0.3, Config.Colors.warning, Config.Colors.white)
                     end
                 end
             end
@@ -535,13 +923,20 @@ function DrawJobPoints(jobId, jobData, playerPed, playerCoords)
 
             if dist < Config.DrawDistance then
                 if dist < Config.InteractDistance then
-                    Draw3DTextOnBone(playerPed, '[E] ' .. point.label, 0.0, 0.0, 0.6)
-
-                    if not IsProgressBarActive() and IsControlJustPressed(0, 38) then
-                        DoCollectTrash(jobId, jobData, point, i)
+                    if dist < currentInteraction.distance then
+                        currentInteraction = {
+                            active = true,
+                            type = 'collect',
+                            jobId = jobId,
+                            jobData = jobData,
+                            point = point,
+                            pointIndex = i,
+                            distance = dist,
+                            label = point.label,
+                        }
                     end
                 else
-                    Draw3DText(point.coords + vector3(0, 0, 0.8), point.label, 0.35, Config.Colors.background, Config.Colors.white)
+                    Draw3DText(point.coords + vector3(0, 0, 0.8), point.label, 0.3, Config.Colors.background, Config.Colors.white)
                 end
             end
         end
@@ -552,13 +947,18 @@ function DrawJobPoints(jobId, jobData, playerPed, playerCoords)
             if dist < Config.DrawDistance then
                 local bagsText = currentShift.collectedBags .. ' sacs'
                 if dist < Config.InteractDistance then
-                    Draw3DTextOnBone(playerPed, '[E] Deposer (' .. bagsText .. ')', 0.0, 0.0, 0.6)
-
-                    if not IsProgressBarActive() and IsControlJustPressed(0, 38) and currentShift.collectedBags > 0 then
-                        DepositTrash(jobId, jobData)
+                    if dist < currentInteraction.distance then
+                        currentInteraction = {
+                            active = true,
+                            type = 'deposit',
+                            jobId = jobId,
+                            jobData = jobData,
+                            distance = dist,
+                            label = 'Deposer (' .. bagsText .. ')',
+                        }
                     end
                 else
-                    Draw3DText(jobData.depositPoint.coords + vector3(0, 0, 0.8), 'Depot - ' .. bagsText, 0.35, {46, 204, 113}, Config.Colors.white)
+                    Draw3DText(jobData.depositPoint.coords + vector3(0, 0, 0.8), 'Depot - ' .. bagsText, 0.3, Config.Colors.success, Config.Colors.white)
                 end
             end
         end
@@ -571,13 +971,20 @@ function DrawJobPoints(jobId, jobData, playerPed, playerCoords)
 
             if dist < Config.DrawDistance then
                 if dist < Config.InteractDistance then
-                    Draw3DTextOnBone(playerPed, '[E] ' .. point.label, 0.0, 0.0, 0.6)
-
-                    if not IsProgressBarActive() and IsControlJustPressed(0, 38) then
-                        DoCleanAction(jobId, jobData, point, i)
+                    if dist < currentInteraction.distance then
+                        currentInteraction = {
+                            active = true,
+                            type = 'clean',
+                            jobId = jobId,
+                            jobData = jobData,
+                            point = point,
+                            pointIndex = i,
+                            distance = dist,
+                            label = point.label,
+                        }
                     end
                 else
-                    Draw3DText(point.coords + vector3(0, 0, 0.8), point.label, 0.35, Config.Colors.background, Config.Colors.white)
+                    Draw3DText(point.coords + vector3(0, 0, 0.8), point.label, 0.3, Config.Colors.background, Config.Colors.white)
                 end
             end
         end
@@ -590,13 +997,20 @@ function DrawJobPoints(jobId, jobData, playerPed, playerCoords)
 
             if dist < Config.DrawDistance then
                 if dist < Config.InteractDistance then
-                    Draw3DTextOnBone(playerPed, '[E] ' .. point.label, 0.0, 0.0, 0.6)
-
-                    if not IsProgressBarActive() and IsControlJustPressed(0, 38) then
-                        DoGardenAction(jobId, jobData, point, i)
+                    if dist < currentInteraction.distance then
+                        currentInteraction = {
+                            active = true,
+                            type = 'garden',
+                            jobId = jobId,
+                            jobData = jobData,
+                            point = point,
+                            pointIndex = i,
+                            distance = dist,
+                            label = point.label,
+                        }
                     end
                 else
-                    Draw3DText(point.coords + vector3(0, 0, 0.8), point.label, 0.35, Config.Colors.background, Config.Colors.white)
+                    Draw3DText(point.coords + vector3(0, 0, 0.8), point.label, 0.3, Config.Colors.background, Config.Colors.white)
                 end
             end
         end
@@ -935,6 +1349,9 @@ function DoFarmAction(jobId, jobData, point, pointIndex)
 
     -- Donner items via serveur
     TriggerServerEvent('zalco_interim:farmItem', jobId, point.item, point.minAmount, point.maxAmount)
+
+    -- Set cooldown pour ce point
+    SetPointCooldown(jobId, pointIndex)
 
     currentShift.tasksCompleted = currentShift.tasksCompleted + 1
     ShowNotification3D('+' .. point.item, 'success', 2000)

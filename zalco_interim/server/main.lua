@@ -279,6 +279,63 @@ AddEventHandler('zalco_interim:addMoney', function(amount)
     xPlayer.addMoney(amount, 'Travail interim')
 end)
 
+-- Acheter equipement chez NPC
+RegisterNetEvent('zalco_interim:buyItem')
+AddEventHandler('zalco_interim:buyItem', function(jobId, itemName, price)
+    local source = source
+    local xPlayer = ESX.GetPlayerFromId(source)
+    if not xPlayer then return end
+
+    -- Verifier que le job existe et a un shop
+    local jobData = Config.Jobs[jobId]
+    if not jobData or not jobData.npc or not jobData.npc.shop then
+        TriggerClientEvent('zalco_interim:notify', source, 'Erreur configuration shop', 'error')
+        return
+    end
+
+    -- Verifier que l'item est dans le shop (securite anti-cheat)
+    local validItem = false
+    local actualPrice = 0
+    for _, shopItem in ipairs(jobData.npc.shop) do
+        if shopItem.item == itemName then
+            validItem = true
+            actualPrice = shopItem.price
+            break
+        end
+    end
+
+    if not validItem then
+        TriggerClientEvent('zalco_interim:notify', source, 'Item invalide', 'error')
+        return
+    end
+
+    -- Utiliser le prix du serveur (securite)
+    price = actualPrice
+
+    -- Verifier argent
+    if xPlayer.getMoney() < price then
+        TriggerClientEvent('zalco_interim:notify', source, 'Pas assez d\'argent! ($' .. price .. ')', 'error')
+        return
+    end
+
+    -- Verifier si peut porter
+    local canCarry = exports.ox_inventory:CanCarryItem(source, itemName, 1)
+    if not canCarry then
+        TriggerClientEvent('zalco_interim:notify', source, 'Inventaire plein!', 'error')
+        return
+    end
+
+    -- Transaction
+    xPlayer.removeMoney(price, 'Achat equipement interim: ' .. itemName)
+    exports.ox_inventory:AddItem(source, itemName, 1)
+
+    TriggerClientEvent('zalco_interim:notify', source, 'Achat: ' .. itemName .. ' (-$' .. price .. ')', 'success')
+
+    if Config.Debug then
+        print(('[ZALCO_INTERIM] %s bought %s for $%d'):format(xPlayer.getName(), itemName, price))
+    end
+end)
+
 -- =============================================================================
 -- CALLBACKS
 -- =============================================================================
