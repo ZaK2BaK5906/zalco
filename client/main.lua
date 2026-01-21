@@ -411,8 +411,11 @@ function OpenQualityMenu(alcohol, playerLevel)
             icon = 'vial'
         end
 
+        -- Afficher le nom de marque si disponible, sinon la qualité
+        local displayName = quality.brandName or quality.quality:gsub("^%l", string.upper)
+
         table.insert(options, {
-            title = quality.quality:gsub("^%l", string.upper),
+            title = displayName,
             description = description,
             icon = icon,
             onSelect = function()
