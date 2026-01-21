@@ -318,21 +318,22 @@ AddEventHandler('zalco_interim:buyItem', function(jobId, itemName, price)
         return
     end
 
-    -- Verifier si peut porter
-    local canCarry = exports.ox_inventory:CanCarryItem(source, itemName, 1)
-    if not canCarry then
-        TriggerClientEvent('zalco_interim:notify', source, 'Inventaire plein!', 'error')
-        return
+    -- Transaction - on donne directement l'item sans check CanCarry
+    -- ox_inventory gere automatiquement si l'inventaire est plein
+    xPlayer.removeMoney(price, 'Achat equipement interim: ' .. itemName)
+
+    local success = exports.ox_inventory:AddItem(source, itemName, 1)
+
+    if success then
+        TriggerClientEvent('zalco_interim:notify', source, 'Achat: ' .. itemName .. ' (-$' .. price .. ')', 'success')
+    else
+        -- Rembourser si echec
+        xPlayer.addMoney(price, 'Remboursement achat echoue')
+        TriggerClientEvent('zalco_interim:notify', source, 'Impossible d\'ajouter l\'item!', 'error')
     end
 
-    -- Transaction
-    xPlayer.removeMoney(price, 'Achat equipement interim: ' .. itemName)
-    exports.ox_inventory:AddItem(source, itemName, 1)
-
-    TriggerClientEvent('zalco_interim:notify', source, 'Achat: ' .. itemName .. ' (-$' .. price .. ')', 'success')
-
     if Config.Debug then
-        print(('[ZALCO_INTERIM] %s bought %s for $%d'):format(xPlayer.getName(), itemName, price))
+        print(('[ZALCO_INTERIM] %s bought %s for $%d (success: %s)'):format(xPlayer.getName(), itemName, price, tostring(success)))
     end
 end)
 

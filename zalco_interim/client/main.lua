@@ -1394,8 +1394,11 @@ end
 function DoFarmAction(jobId, jobData, point, pointIndex)
     local playerPed = PlayerPedId()
 
-    -- Attacher prop si existe
-    if jobData.prop then
+    -- Ne PAS attacher de prop si le joueur a deja l'outil requis (evite le double)
+    -- Les jobs avec requiredItem ou requiredAxes = joueur a deja l'outil visible
+    local shouldAttachProp = jobData.prop and not jobData.requiredItem and not jobData.requiredAxes
+
+    if shouldAttachProp then
         AttachProp(jobData.prop)
     end
 
@@ -1416,7 +1419,7 @@ function DoFarmAction(jobId, jobData, point, pointIndex)
         if IsProgressBarCancelled() then
             StopProgressBar()
             ClearPedTasks(playerPed)
-            RemoveProp()
+            if shouldAttachProp then RemoveProp() end
             ShowNotification3D('Action annulee', 'warning', 2000)
             return
         end
@@ -1425,7 +1428,7 @@ function DoFarmAction(jobId, jobData, point, pointIndex)
 
     StopProgressBar()
     ClearPedTasks(playerPed)
-    RemoveProp()
+    if shouldAttachProp then RemoveProp() end
 
     -- Donner items via serveur
     TriggerServerEvent('zalco_interim:farmItem', jobId, point.item, point.minAmount, point.maxAmount)
