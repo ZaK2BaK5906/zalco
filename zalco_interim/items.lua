@@ -275,4 +275,55 @@ return {
         close = true,
         description = 'Cuir brut non traite',
     },
+
+    ['meat_beef_cut'] = {
+        label = 'Beef Cuts',
+        weight = 350,
+        stack = true,
+        close = true,
+        description = 'Morceaux de boeuf decoupes',
+    },
+
+    ['meat_pork_cut'] = {
+        label = 'Pork Cuts',
+        weight = 300,
+        stack = true,
+        close = true,
+        description = 'Morceaux de porc decoupes',
+    },
+
+    ['meat_packed'] = {
+        label = 'Packed Meat',
+        weight = 400,
+        stack = true,
+        close = true,
+        description = 'Viande emballee prete a vendre',
+    },
+
+    ['butcher_knife'] = {
+        label = 'Butcher Knife',
+        weight = 500,
+        stack = false,
+        close = true,
+        description = 'Couteau de boucher professionnel',
+    },
+
+    -- =========================================================================
+    -- JARDINIER - Outils
+    -- =========================================================================
+    ['garden_shears'] = {
+        label = 'Garden Shears',
+        weight = 800,
+        stack = false,
+        close = true,
+        description = 'Secateur pour tailler les haies',
+    },
+
+    ['garden_rake'] = {
+        label = 'Garden Rake',
+        weight = 1200,
+        stack = false,
+        close = true,
+        description = 'Rateau pour ramasser les feuilles',
+    },
 }
