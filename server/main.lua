@@ -272,25 +272,12 @@ RegisterNetEvent('zalco:processAlcohol', function(alcoholType, quality)
         return
     end
 
-    -- Vérifier si le joueur peut porter l'alcool AVANT de retirer les ingrédients
-    local canCarry = exports.ox_inventory:CanCarryItem(src, qualityData.item, 1)
-
-    if not canCarry then
-        TriggerClientEvent('zalco:notify', src, {
-            type = 'error',
-            title = 'Inventaire plein',
-            message = 'Vous ne pouvez pas porter cet alcool ! Libérez de l\'espace.',
-            duration = 3000
-        })
-        return
-    end
-
-    -- Retirer les ingrédients
+    -- Retirer les ingrédients d'abord pour libérer de l'espace
     for ingredient, amount in pairs(qualityData.ingredients) do
         exports.ox_inventory:RemoveItem(src, ingredient, amount)
     end
 
-    -- Ajouter l'alcool
+    -- Ajouter l'alcool (maintenant qu'il y a de l'espace)
     local success = exports.ox_inventory:AddItem(src, qualityData.item, 1)
 
     if success then
